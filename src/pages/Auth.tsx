@@ -93,11 +93,10 @@ const Auth = () => {
         }
       }
       toast({
-        title: "Conta criada!",
-        description: "A sua conta foi criada com sucesso.",
+        title: "Bem-vindo à Essenza E.J!",
+        description: "Olá! Chamo-me Eunice Joaquim e isto é a Essenza E.J. Para a segurança de todos, optámos pela verificação de email. Por favor, confirme o seu email verificando a sua caixa de mensagens para poder entrar.",
+        duration: 15000,
       });
-      // Navigate to home immediately after successful signup
-      navigate(from, { replace: true });
     }
     setIsSubmitting(false);
   };
