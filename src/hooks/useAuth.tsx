@@ -70,26 +70,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, fullName: string, avatarUrl?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: fullName,
-          avatar_url: avatarUrl,
+          ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
         },
       },
     });
-
-    // If signup successful and we have avatar, update the profile
-    if (!error && data.user && avatarUrl) {
-      // Update profile with avatar URL
-      await supabase
-        .from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .eq('user_id', data.user.id);
-    }
     
     return { error: error as Error | null };
   };

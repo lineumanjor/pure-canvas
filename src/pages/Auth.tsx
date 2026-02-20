@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ShoppingBag, Store, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
@@ -48,9 +49,9 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (email: string, password: string, fullName: string, avatarUrl?: string) => {
+  const handleSignup = async (email: string, password: string, fullName: string, avatarFile?: File) => {
     setIsSubmitting(true);
-    const { error } = await signUp(email, password, fullName, avatarUrl);
+    const { error } = await signUp(email, password, fullName);
 
     if (error) {
       let message = error.message;
@@ -63,6 +64,34 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Upload avatar after successful signup if file was selected
+      if (avatarFile) {
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            const fileExt = avatarFile.name.split(".").pop();
+            const fileName = `${newUser.id}-${Date.now()}.${fileExt}`;
+            const filePath = `avatars/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("partner-images")
+              .upload(filePath, avatarFile, { cacheControl: "3600", upsert: true });
+
+            if (!uploadError) {
+              const { data: urlData } = supabase.storage
+                .from("partner-images")
+                .getPublicUrl(filePath);
+
+              await supabase
+                .from("profiles")
+                .update({ avatar_url: urlData.publicUrl })
+                .eq("user_id", newUser.id);
+            }
+          }
+        } catch (e) {
+          console.error("Avatar upload after signup failed:", e);
+        }
+      }
       toast({
         title: "Conta criada!",
         description: "A sua conta foi criada com sucesso.",

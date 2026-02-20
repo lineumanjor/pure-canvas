@@ -26,12 +26,13 @@ const signupSchema = z
 type SignupFormData = z.infer<typeof signupSchema>;
 
 interface SignupFormProps {
-  onSubmit: (email: string, password: string, fullName: string, avatarUrl?: string) => Promise<void>;
+  onSubmit: (email: string, password: string, fullName: string, avatarFile?: File) => Promise<void>;
   isLoading: boolean;
 }
 
 const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const {
     register,
     handleSubmit,
@@ -46,7 +47,7 @@ const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
       data.email.trim().toLowerCase(),
       data.password,
       data.fullName.trim(),
-      avatarUrl || undefined
+      avatarFile || undefined
     );
   };
 
@@ -59,7 +60,7 @@ const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
         transition={{ delay: 0, duration: 0.4 }}
         className="flex justify-center pb-2"
       >
-        <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} size="md" />
+        <AvatarUpload value={avatarPreview} onChange={setAvatarPreview} onFileSelect={setAvatarFile} size="md" />
       </motion.div>
 
       <motion.div
