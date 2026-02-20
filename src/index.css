@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ESSENZA E.J Design System - Premium African Marketplace */
+
+@layer base {
+  :root {
+    /* Core palette - Blue & Black Premium (matching ESSENZA logo) */
+    --background: 210 20% 98%;
+    --foreground: 220 15% 15%;
+
+    --card: 210 20% 99%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 210 20% 99%;
+    --popover-foreground: 220 15% 15%;
+
+    /* Primary - ESSENZA Blue */
+    --primary: 200 85% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Deep Black/Charcoal */
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 210 20% 98%;
+
+    /* Muted - Light Gray */
+    --muted: 210 15% 93%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent - Lighter Blue */
+    --accent: 200 75% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 88%;
+    --input: 210 15% 88%;
+    --ring: 200 85% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --brand-gradient: linear-gradient(135deg, hsl(200 85% 50%) 0%, hsl(200 75% 60%) 50%, hsl(200 85% 50%) 100%);
+    --cool-gradient: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(210 15% 93%) 100%);
+    --hero-overlay: linear-gradient(90deg, hsl(220 15% 10% / 0.9) 0%, hsl(220 15% 10% / 0.5) 60%, transparent 100%);
+    --card-shadow: 0 4px 24px -4px hsl(200 85% 50% / 0.15);
+    --card-shadow-hover: 0 12px 40px -8px hsl(200 85% 50% / 0.25);
+
+    /* Category colors */
+    --category-food: 16 85% 55%;
+    --category-fashion: 280 60% 55%;
+    --category-services: 200 80% 50%;
+    --category-electronics: 220 70% 50%;
+    --category-beauty: 340 70% 55%;
+    --category-home: 150 50% 45%;
+
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 220 15% 30%;
+    --sidebar-primary: 200 85% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 93%;
+    --sidebar-accent-foreground: 220 15% 20%;
+    --sidebar-border: 210 15% 88%;
+    --sidebar-ring: 200 85% 50%;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 210 20% 95%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 200 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 15% 25%;
+    --secondary-foreground: 210 20% 95%;
+
+    --muted: 220 15% 18%;
+    --muted-foreground: 210 15% 60%;
+
+    --accent: 200 75% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 200 85% 55%;
+
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 200 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 18%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 200 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--brand-gradient);
+  }
+
+  /* Keep old class for compatibility */
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--brand-gradient);
+  }
+
+  .btn-gold {
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+    box-shadow: 0 4px 14px -2px hsl(200 85% 50% / 0.4);
+  }
+
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -2px hsl(200 85% 50% / 0.5);
+  }
+
+  .card-partner {
+    @apply bg-card rounded-2xl overflow-hidden transition-all duration-500;
+    box-shadow: var(--card-shadow);
+  }
+
+  .card-partner:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .category-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300;
+  }
+
+  .category-badge:hover {
+    transform: scale(1.05);
+  }
+
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background-size: 200% 100%;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+}
+
+#lovable-badge {
+  display: none !important;
+}
