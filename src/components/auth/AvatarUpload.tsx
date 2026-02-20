@@ -1,12 +1,12 @@
-import { useState, useRef } from "react";
-import { Camera, Loader2, X, User } from "lucide-react";
+import { useState, useRef, forwardRef } from "react";
+import { Camera, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface AvatarUploadProps {
   value?: string;
   onChange: (url: string) => void;
+  onFileSelect?: (file: File) => void;
   className?: string;
   size?: "sm" | "md" | "lg";
 }
@@ -14,11 +14,12 @@ interface AvatarUploadProps {
 const AvatarUpload = ({
   value,
   onChange,
+  onFileSelect,
   className,
   size = "md",
 }: AvatarUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const sizeClasses = {
@@ -33,47 +34,28 @@ const AvatarUpload = ({
 
     setError(null);
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       setError("Selecione uma imagem válida");
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError("Tamanho máximo: 5MB");
       return;
     }
 
-    setIsUploading(true);
+    setIsProcessing(true);
 
     try {
-      // Generate unique filename with temp prefix (will be moved after user creation)
-      const fileExt = file.name.split(".").pop();
-      const fileName = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { data, error: uploadError } = await supabase.storage
-        .from("partner-images")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("partner-images")
-        .getPublicUrl(data.path);
-
-      onChange(urlData.publicUrl);
+      // Use local blob URL for preview (works without auth)
+      const blobUrl = URL.createObjectURL(file);
+      onChange(blobUrl);
+      onFileSelect?.(file);
     } catch (err: any) {
-      console.error("Upload error:", err);
-      setError("Erro ao carregar imagem");
+      console.error("File select error:", err);
+      setError("Erro ao processar imagem");
     } finally {
-      setIsUploading(false);
+      setIsProcessing(false);
       if (inputRef.current) {
         inputRef.current.value = "";
       }
@@ -81,6 +63,9 @@ const AvatarUpload = ({
   };
 
   const handleRemove = () => {
+    if (value?.startsWith("blob:")) {
+      URL.revokeObjectURL(value);
+    }
     onChange("");
   };
 
@@ -92,7 +77,7 @@ const AvatarUpload = ({
         accept="image/*"
         onChange={handleFileSelect}
         className="hidden"
-        disabled={isUploading}
+        disabled={isProcessing}
       />
 
       <motion.div
@@ -104,60 +89,40 @@ const AvatarUpload = ({
           "bg-muted/50",
           sizeClasses[size]
         )}
-        onClick={() => !isUploading && inputRef.current?.click()}
+        onClick={() => !isProcessing && inputRef.current?.click()}
       >
-        <AnimatePresence mode="wait">
-          {value ? (
-            <motion.div
-              key="image"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full h-full"
+        {value ? (
+          <div className="w-full h-full">
+            <img
+              src={value}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemove();
+              }}
+              className="absolute top-0 right-0 p-1 bg-destructive rounded-full text-destructive-foreground transform translate-x-1/4 -translate-y-1/4"
             >
-              <img
-                src={value}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                }}
-              />
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemove();
-                }}
-                className="absolute top-0 right-0 p-1 bg-destructive rounded-full text-destructive-foreground transform translate-x-1/4 -translate-y-1/4"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </motion.div>
-          ) : isUploading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full h-full flex items-center justify-center"
-            >
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="placeholder"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full h-full flex flex-col items-center justify-center gap-1"
-            >
-              <div className="rounded-full bg-primary/10 p-2">
-                <Camera className="w-5 h-5 text-primary" />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : isProcessing ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          </div>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+            <div className="rounded-full bg-primary/10 p-2">
+              <Camera className="w-5 h-5 text-primary" />
+            </div>
+          </div>
+        )}
       </motion.div>
 
       <p className="text-xs text-muted-foreground text-center">
