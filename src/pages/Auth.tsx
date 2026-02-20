@@ -96,6 +96,8 @@ const Auth = () => {
         title: "Conta criada!",
         description: "A sua conta foi criada com sucesso.",
       });
+      // Navigate to home immediately after successful signup
+      navigate(from, { replace: true });
     }
     setIsSubmitting(false);
   };
