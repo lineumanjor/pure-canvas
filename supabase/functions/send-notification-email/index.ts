@@ -77,32 +77,36 @@ serve(async (req) => {
       throw new Error(`Tipo de notificação desconhecido: ${type}`);
     }
 
-    // Send emails in batches of 50
-    const batchSize = 50;
-    for (let i = 0; i < emails.length; i += batchSize) {
-      const batch = emails.slice(i, i + batchSize);
+    // Send emails one by one
+    let successCount = 0;
+    for (const email of emails) {
+      try {
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Essenza E.J <essenzacomercial@hotmail.com>",
+            to: [email],
+            subject,
+            html: htmlContent,
+          }),
+        });
 
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Essenza E.J <essenzacomercial@hotmail.com>",
-          to: batch,
-          subject,
-          html: htmlContent,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorBody = await res.text();
-        console.error(`Erro Resend (batch ${i}): ${res.status} - ${errorBody}`);
+        if (res.ok) {
+          successCount++;
+        } else {
+          const errorBody = await res.text();
+          console.error(`Erro Resend para ${email}: ${res.status} - ${errorBody}`);
+        }
+      } catch (err) {
+        console.error(`Erro ao enviar para ${email}:`, err);
       }
     }
 
-    console.log(`Emails enviados para ${emails.length} utilizadores (tipo: ${type})`);
+    console.log(`Emails enviados: ${successCount}/${emails.length} (tipo: ${type})`);
 
     return new Response(
       JSON.stringify({ success: true, recipients: emails.length }),
