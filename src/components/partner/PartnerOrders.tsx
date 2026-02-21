@@ -59,6 +59,24 @@ const PartnerOrders = ({ partnerId }: PartnerOrdersProps) => {
     },
   });
 
+  // Get client profiles for orders
+  const clientIds = [...new Set((orders || []).map(o => o.client_id).filter(Boolean))] as string[];
+  const { data: clientProfiles = {} } = useQuery({
+    queryKey: ["order-client-profiles", clientIds],
+    queryFn: async () => {
+      if (clientIds.length === 0) return {};
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", clientIds);
+      return (data || []).reduce((acc, p) => {
+        acc[p.user_id] = p.full_name;
+        return acc;
+      }, {} as Record<string, string | null>);
+    },
+    enabled: clientIds.length > 0,
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       const { error } = await supabase
@@ -142,6 +160,11 @@ const PartnerOrders = ({ partnerId }: PartnerOrdersProps) => {
                     <div className="flex items-center gap-3">
                       <CardTitle className="text-base font-medium">
                         Pedido #{order.id.slice(0, 8)}
+                        {order.client_id && clientProfiles[order.client_id] && (
+                          <span className="ml-2 text-sm font-normal text-muted-foreground">
+                            — {clientProfiles[order.client_id]}
+                          </span>
+                        )}
                       </CardTitle>
                       <Badge className={`${statusColors[order.status]} border`}>
                         {statusLabels[order.status] || order.status}

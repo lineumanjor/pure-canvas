@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { useCategories, isServiceCategory } from "@/hooks/useCategories";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,8 @@ const PartnerStore = () => {
   const navigate = useNavigate();
   const { addItem, getPartnerItems, getItemCount, updateQuantity } = useCart();
   const { categories } = useCategories();
+  const { profile } = useProfile();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
@@ -94,8 +98,24 @@ const PartnerStore = () => {
     name: string;
     price: number;
     image_url: string | null;
+    stock: number | null;
   }) => {
     if (!partner) return;
+
+    // Check stock limit
+    const currentCartItem = partnerCartItems.find(i => i.productId === product.id);
+    const currentQty = currentCartItem?.quantity || 0;
+    if (product.stock !== null && currentQty >= product.stock) {
+      const isFemale = profile?.gender === "feminino";
+      toast({
+        title: isFemale 
+          ? "Lamento minha cota! 😅 Excedeu o limite!" 
+          : "Lamento meu cota! 😅 Excedeu o limite!",
+        description: `Só temos ${product.stock} unidade(s) de "${product.name}" disponível.`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     addItem({
       productId: product.id,

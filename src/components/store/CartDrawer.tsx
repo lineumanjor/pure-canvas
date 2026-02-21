@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ interface CartDrawerProps {
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   const { items, updateQuantity, removeItem, getTotal, clearCart } = useCart();
   const { user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isCheckout, setIsCheckout] = useState(false);
@@ -30,6 +32,17 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     address: "",
     notes: "",
   });
+
+  // Pre-fill delivery info from profile
+  useEffect(() => {
+    if (isCheckout && profile) {
+      setDeliveryInfo(prev => ({
+        phone: prev.phone || profile.phone || "",
+        address: prev.address || (profile as any).delivery_address || "",
+        notes: prev.notes,
+      }));
+    }
+  }, [isCheckout, profile]);
 
   // Group items by partner
   const itemsByPartner = items.reduce((acc, item) => {

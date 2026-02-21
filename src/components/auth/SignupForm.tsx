@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, Lock, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import AuthInput from "./AuthInput";
 import AuthButton from "./AuthButton";
 import AvatarUpload from "./AvatarUpload";
@@ -17,6 +19,7 @@ const signupSchema = z
     email: z.string().min(1, "Email é obrigatório").email("Email inválido"),
     password: z.string().min(6, "Mínimo 6 caracteres"),
     confirmPassword: z.string().min(1, "Confirmação obrigatória"),
+    gender: z.enum(["masculino", "feminino"], { required_error: "Selecione o género" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
@@ -26,7 +29,7 @@ const signupSchema = z
 type SignupFormData = z.infer<typeof signupSchema>;
 
 interface SignupFormProps {
-  onSubmit: (email: string, password: string, fullName: string, avatarFile?: File) => Promise<void>;
+  onSubmit: (email: string, password: string, fullName: string, gender: string, avatarFile?: File) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -36,10 +39,11 @@ const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", gender: undefined as unknown as "masculino" | "feminino" },
   });
 
   const handleFormSubmit = async (data: SignupFormData) => {
@@ -47,6 +51,7 @@ const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
       data.email.trim().toLowerCase(),
       data.password,
       data.fullName.trim(),
+      data.gender,
       avatarFile || undefined
     );
   };
@@ -80,6 +85,38 @@ const SignupForm = ({ onSubmit, isLoading }: SignupFormProps) => {
         />
       </motion.div>
 
+      {/* Gender Selection */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.07, duration: 0.4 }}
+        className="space-y-2"
+      >
+        <Label className="text-sm font-medium">Género</Label>
+        <Controller
+          name="gender"
+          control={control}
+          render={({ field }) => (
+            <RadioGroup
+              value={field.value}
+              onValueChange={field.onChange}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="masculino" id="masculino" />
+                <Label htmlFor="masculino" className="cursor-pointer">Masculino</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="feminino" id="feminino" />
+                <Label htmlFor="feminino" className="cursor-pointer">Feminino</Label>
+              </div>
+            </RadioGroup>
+          )}
+        />
+        {errors.gender && (
+          <p className="text-xs text-destructive">{errors.gender.message}</p>
+        )}
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
