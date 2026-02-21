@@ -4,13 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText } from 'lucide-react';
+import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText, Video } from 'lucide-react';
 import AdminPartners from '@/components/admin/AdminPartners';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminChats from '@/components/admin/AdminChats';
 import AdminBlog from '@/components/admin/AdminBlog';
+import AdminPartnerComm from '@/components/admin/AdminPartnerComm';
 
 const Admin = () => {
   const { user, loading, isAdmin, signOut } = useAuth();
@@ -112,7 +113,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto gap-2 bg-transparent p-0">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto gap-2 bg-transparent p-0">
             <TabsTrigger 
               value="partners" 
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
@@ -140,6 +141,13 @@ const Admin = () => {
             >
               <MessageCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Conversas</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="partner-comm"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
+            >
+              <Video className="h-4 w-4" />
+              <span className="hidden sm:inline">Parceiros Chat</span>
             </TabsTrigger>
             <TabsTrigger 
               value="blog"
@@ -171,6 +179,10 @@ const Admin = () => {
 
           <TabsContent value="chats" className="mt-6">
             <AdminChats />
+          </TabsContent>
+
+          <TabsContent value="partner-comm" className="mt-6">
+            <AdminPartnerComm />
           </TabsContent>
 
           <TabsContent value="blog" className="mt-6">

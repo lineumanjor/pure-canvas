@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCategories, isServiceCategory } from "@/hooks/useCategories";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Store, Package, ShoppingCart, Settings, Briefcase, MessageCircle } from "lucide-react";
+import { ArrowLeft, Store, Package, ShoppingCart, Settings, Briefcase, MessageCircle, Video } from "lucide-react";
 import { motion } from "framer-motion";
 import PartnerOverview from "@/components/partner/PartnerOverview";
 import PartnerProducts from "@/components/partner/PartnerProducts";
@@ -13,6 +13,7 @@ import PartnerOrders from "@/components/partner/PartnerOrders";
 import PartnerProfile from "@/components/partner/PartnerProfile";
 import PartnerServiceRequests from "@/components/partner/PartnerServiceRequests";
 import PartnerChats from "@/components/partner/PartnerChats";
+import PartnerAdminMessages from "@/components/partner/PartnerAdminMessages";
 
 const PartnerDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -141,7 +142,7 @@ const PartnerDashboard = () => {
       {/* Main Content */}
       <main className="container-custom py-8">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className={`grid w-full max-w-xl bg-muted/50 ${isServiceProvider ? 'grid-cols-4' : 'grid-cols-5'}`}>
+          <TabsList className={`grid w-full max-w-2xl bg-muted/50 ${isServiceProvider ? 'grid-cols-5' : 'grid-cols-6'}`}>
             <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-background">
               <Store className="w-4 h-4" />
               <span className="hidden sm:inline">Visão Geral</span>
@@ -173,6 +174,10 @@ const PartnerDashboard = () => {
                 <span className="hidden sm:inline">Conversas</span>
               </TabsTrigger>
             )}
+            <TabsTrigger value="admin-messages" className="gap-2 data-[state=active]:bg-background">
+              <Video className="w-4 h-4" />
+              <span className="hidden sm:inline">Essenza</span>
+            </TabsTrigger>
             <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-background">
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -201,6 +206,10 @@ const PartnerDashboard = () => {
               <PartnerChats partnerId={partnerId!} />
             </TabsContent>
           )}
+
+          <TabsContent value="admin-messages">
+            <PartnerAdminMessages partnerId={partnerId!} />
+          </TabsContent>
 
           <TabsContent value="profile">
             <PartnerProfile partnerId={partnerId!} />
