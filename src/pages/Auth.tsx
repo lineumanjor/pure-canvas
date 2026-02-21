@@ -49,7 +49,7 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (email: string, password: string, fullName: string, avatarFile?: File) => {
+  const handleSignup = async (email: string, password: string, fullName: string, gender: string, avatarFile?: File) => {
     setIsSubmitting(true);
     const { error } = await signUp(email, password, fullName);
 
@@ -84,12 +84,31 @@ const Auth = () => {
 
               await supabase
                 .from("profiles")
-                .update({ avatar_url: urlData.publicUrl })
+                .update({ avatar_url: urlData.publicUrl, gender })
+                .eq("user_id", newUser.id);
+            } else {
+              // Still save gender even if avatar upload fails
+              await supabase
+                .from("profiles")
+                .update({ gender })
                 .eq("user_id", newUser.id);
             }
           }
         } catch (e) {
-          console.error("Avatar upload after signup failed:", e);
+          console.error("Post-signup profile update failed:", e);
+        }
+      } else {
+        // No avatar, just save gender
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await supabase
+              .from("profiles")
+              .update({ gender })
+              .eq("user_id", newUser.id);
+          }
+        } catch (e) {
+          console.error("Gender save failed:", e);
         }
       }
       toast({
