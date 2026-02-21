@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_partner_messages: {
+        Row: {
+          content: string
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          partner_id: string
+          read_at: string | null
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          partner_id: string
+          read_at?: string | null
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          partner_id?: string
+          read_at?: string | null
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_partner_messages_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           content: string
@@ -606,6 +650,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_conferences: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          duration_minutes: number
+          ended_at: string | null
+          id: string
+          partner_id: string
+          room_name: string
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          duration_minutes?: number
+          ended_at?: string | null
+          id?: string
+          partner_id: string
+          room_name: string
+          scheduled_at: string
+          started_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          duration_minutes?: number
+          ended_at?: string | null
+          id?: string
+          partner_id?: string
+          room_name?: string
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_conferences_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

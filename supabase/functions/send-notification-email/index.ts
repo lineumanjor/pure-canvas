@@ -8,15 +8,20 @@ const corsHeaders = {
 };
 
 interface NotificationPayload {
-  type: "partner_approved" | "product_created";
+  type: "partner_approved" | "product_created" | "video_conference_scheduled";
   record: {
-    name: string;
+    name?: string;
     description?: string;
     category?: string;
     image_url?: string;
     location?: string;
     price?: number;
     partner_id?: string;
+    title?: string;
+    scheduled_at?: string;
+    duration_minutes?: number;
+    partner_name?: string;
+    room_name?: string;
   };
 }
 
@@ -73,6 +78,26 @@ serve(async (req) => {
       }
       subject = `✨ Novo produto na Essenza E.J: ${record.name}!`;
       htmlContent = buildProductEmail(record, partnerName);
+    } else if (type === "video_conference_scheduled") {
+      // For video conference, only send to the specific partner
+      subject = `📹 Videoconferência agendada: ${record.title}`;
+      htmlContent = buildVideoConferenceEmail(record);
+
+      // Get partner email specifically
+      if (record.partner_id) {
+        const { data: partner } = await supabase
+          .from("partners")
+          .select("user_id")
+          .eq("id", record.partner_id)
+          .single();
+        
+        if (partner?.user_id) {
+          const { data: userData } = await supabase.auth.admin.getUserById(partner.user_id);
+          if (userData?.user?.email) {
+            emails = [userData.user.email]; // Override - only send to this partner
+          }
+        }
+      }
     } else {
       throw new Error(`Tipo de notificação desconhecido: ${type}`);
     }
@@ -147,6 +172,50 @@ function buildPartnerEmail(record: NotificationPayload["record"]): string {
           <a href="https://essenzacomercial.lovable.app/parceiros" 
              style="background-color: #8b7355; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-size: 15px;">
             Conhecer a Loja
+          </a>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 30px; color: #999; font-size: 12px;">
+        <p>Com carinho, Eunice Joaquim — Essenza E.J</p>
+      </div>
+    </div>
+  `;
+}
+
+function buildVideoConferenceEmail(record: NotificationPayload["record"]): string {
+  const scheduledDate = record.scheduled_at
+    ? new Date(record.scheduled_at).toLocaleString("pt-AO", {
+        dateStyle: "full",
+        timeStyle: "short",
+      })
+    : "A definir";
+
+  return `
+    <div style="font-family: 'Georgia', serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #faf9f7;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #1a1a1a; font-size: 28px; margin: 0;">Essenza E.J</h1>
+        <p style="color: #8b7355; font-size: 14px; letter-spacing: 2px; margin-top: 5px;">VIDEOCONFERÊNCIA</p>
+      </div>
+      <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <h2 style="color: #1a1a1a; font-size: 22px; margin-top: 0;">📹 Videoconferência Agendada</h2>
+        <p style="color: #555; font-size: 16px; line-height: 1.6;">
+          A administração da Essenza E.J agendou uma videoconferência consigo.
+        </p>
+        <div style="background: #f5f3ef; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="color: #1a1a1a; font-size: 16px; font-weight: bold; margin: 0 0 10px 0;">
+            ${record.title || "Reunião"}
+          </p>
+          ${record.description ? `<p style="color: #666; font-size: 14px; margin: 0 0 10px 0;">${record.description}</p>` : ""}
+          <p style="color: #8b7355; font-size: 14px; margin: 0;">📅 ${scheduledDate}</p>
+          <p style="color: #8b7355; font-size: 14px; margin: 5px 0 0 0;">⏱️ Duração: ${record.duration_minutes || 30} minutos</p>
+        </div>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Aceda ao seu painel de parceiro para entrar na sala de videoconferência no horário agendado.
+        </p>
+        <div style="text-align: center; margin-top: 25px;">
+          <a href="https://essenzacomercial.lovable.app/painel-parceiro"
+             style="background-color: #8b7355; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-size: 15px;">
+            Abrir Painel do Parceiro
           </a>
         </div>
       </div>
