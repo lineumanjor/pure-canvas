@@ -48,7 +48,7 @@ serve(async (req) => {
     const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
     if (usersError) throw new Error(`Erro ao buscar utilizadores: ${usersError.message}`);
 
-    const emails = usersData.users
+    let emails = usersData.users
       .map((u) => u.email)
       .filter((e): e is string => !!e);
 
