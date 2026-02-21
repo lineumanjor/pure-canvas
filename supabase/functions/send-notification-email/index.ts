@@ -89,7 +89,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Essenza E.J <onboarding@resend.dev>",
+          from: "Essenza E.J <essenzacomercial@hotmail.com>",
           to: batch,
           subject,
           html: htmlContent,
