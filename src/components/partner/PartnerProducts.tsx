@@ -26,6 +26,7 @@ interface Product {
   category: string | null;
   image_url: string | null;
   available: boolean | null;
+  stock: number | null;
 }
 
 interface ProductForm {
@@ -35,6 +36,7 @@ interface ProductForm {
   category: string;
   image_url: string;
   available: boolean;
+  stock: string;
 }
 
 const initialForm: ProductForm = {
@@ -44,6 +46,7 @@ const initialForm: ProductForm = {
   category: "",
   image_url: "",
   available: true,
+  stock: "",
 };
 
 const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProductsProps) => {
@@ -80,6 +83,7 @@ const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProduc
         category: data.category || null,
         image_url: data.image_url || null,
         available: data.available,
+        stock: data.stock ? parseInt(data.stock) : null,
       });
       if (error) throw error;
     },
@@ -104,6 +108,7 @@ const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProduc
           category: data.category || null,
           image_url: data.image_url || null,
           available: data.available,
+          stock: data.stock ? parseInt(data.stock) : null,
         })
         .eq("id", id);
       if (error) throw error;
@@ -147,6 +152,7 @@ const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProduc
       category: product.category || "",
       image_url: product.image_url || "",
       available: product.available ?? true,
+      stock: product.stock !== null ? product.stock.toString() : "",
     });
     setIsDialogOpen(true);
   };
@@ -251,6 +257,22 @@ const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProduc
                   aspectRatio="square"
                 />
               </div>
+              {!isServiceProvider && (
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Quantidade em Estoque</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    min="0"
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                    placeholder="Deixe vazio para ilimitado"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deixe vazio se não deseja controlar estoque
+                  </p>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <Label htmlFor="available">Disponível</Label>
                 <Switch
@@ -340,6 +362,11 @@ const PartnerProducts = ({ partnerId, isServiceProvider = false }: PartnerProduc
                         {Number(product.price).toLocaleString("pt-AO")} Kz
                       </span>
                     </div>
+                    {!isServiceProvider && product.stock !== null && (
+                      <p className={`text-xs font-medium mb-1 ${product.stock === 0 ? 'text-destructive' : product.stock <= 5 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                        {product.stock === 0 ? 'Esgotado' : `${product.stock} em estoque`}
+                      </p>
+                    )}
                     {product.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                         {product.description}
