@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
@@ -25,20 +26,44 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = "essenza_cart";
+const CART_STORAGE_PREFIX = "essenza_cart_";
+
+const getCartKey = (userId?: string) => `${CART_STORAGE_PREFIX}${userId || "guest"}`;
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState<CartItem[]>([]);
+  const currentUserRef = useRef<string | undefined>(undefined);
+
+  // Listen to auth changes and load the correct cart
+  useEffect(() => {
+    const loadCart = (userId?: string) => {
+      try {
+        const stored = localStorage.getItem(getCartKey(userId));
+        setItems(stored ? JSON.parse(stored) : []);
+      } catch {
+        setItems([]);
+      }
+      currentUserRef.current = userId;
+    };
+
+    // Load initial cart
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadCart(session?.user?.id);
+    });
+
+    // React to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUserId = session?.user?.id;
+      if (newUserId !== currentUserRef.current) {
+        loadCart(newUserId);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    localStorage.setItem(getCartKey(currentUserRef.current), JSON.stringify(items));
   }, [items]);
 
   const addItem = (item: Omit<CartItem, "id" | "quantity">, quantity = 1) => {
