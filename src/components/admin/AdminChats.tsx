@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, User, Store, ChevronRight, Search, Shield, Eye, Filter, Archive, CheckCircle2 } from "lucide-react";
+import { MessageCircle, User, Store, ChevronRight, Search, Shield, Eye, Filter, Archive, CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,7 +14,19 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useChat, type ConversationWithDetails } from "@/hooks/useChat";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -50,6 +62,18 @@ const AdminChats = () => {
   const [partnerFilter, setPartnerFilter] = useState<string>("all");
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const deleteConversation = async (convId: string) => {
+    // Delete messages first, then conversation
+    const { error: msgError } = await supabase.from("messages").delete().eq("conversation_id", convId);
+    if (msgError) { toast.error("Erro ao apagar mensagens"); return; }
+    const { error } = await supabase.from("conversations").delete().eq("id", convId);
+    if (error) { toast.error("Erro ao apagar conversa"); return; }
+    toast.success("Conversa apagada com sucesso");
+    if (activeConversationId === convId) setActiveConversationId(null);
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+  };
 
   // Get client and partner profiles for conversations
   const { data: profiles = {} } = useQuery({
@@ -397,10 +421,33 @@ const AdminChats = () => {
                     )}
                   </div>
                 </div>
+              <div className="flex items-center gap-2">
                 <Badge variant="outline" className="gap-1">
                   <Eye className="w-3 h-3" />
                   Monitorando
                 </Badge>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Apagar conversa?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Todas as mensagens desta conversa serão permanentemente apagadas. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteConversation(activeConversationId!)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Apagar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
               </div>
             </CardHeader>
 

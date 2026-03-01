@@ -20,8 +20,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, X, Eye, Search, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Check, X, Eye, Search, Users, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Partner {
   id: string;
@@ -94,6 +105,14 @@ const AdminPartners = () => {
       fetchPartners();
       setDetailsOpen(false);
     }
+  };
+
+  const deletePartner = async (partnerId: string) => {
+    const { error } = await supabase.from('partners').delete().eq('id', partnerId);
+    if (error) { toast.error('Erro ao apagar parceiro'); return; }
+    toast.success('Parceiro apagado com sucesso');
+    setDetailsOpen(false);
+    fetchPartners();
   };
 
   const filteredPartners = partners.filter(partner =>
@@ -253,6 +272,23 @@ const AdminPartners = () => {
                               </Button>
                             </>
                           )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Apagar parceiro?</AlertDialogTitle>
+                                <AlertDialogDescription>Este parceiro e todos os dados associados serão permanentemente apagados.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deletePartner(partner.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Apagar</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>

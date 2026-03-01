@@ -13,8 +13,19 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Package, Search, Eye, EyeOff } from 'lucide-react';
+import { Package, Search, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Product {
   id: string;
@@ -71,6 +82,13 @@ const AdminProducts = () => {
       toast.success('Disponibilidade atualizada');
       fetchProducts();
     }
+  };
+
+  const deleteProduct = async (productId: string) => {
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) { toast.error('Erro ao apagar produto'); return; }
+    toast.success('Produto apagado com sucesso');
+    fetchProducts();
   };
 
   const filteredProducts = products.filter(product =>
@@ -165,8 +183,9 @@ const AdminProducts = () => {
                     <TableHead>Produto</TableHead>
                     <TableHead className="hidden md:table-cell">Parceiro</TableHead>
                     <TableHead className="hidden lg:table-cell">Categoria</TableHead>
-                    <TableHead>Preço</TableHead>
+                     <TableHead>Preço</TableHead>
                     <TableHead>Disponível</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -201,6 +220,25 @@ const AdminProducts = () => {
                           checked={product.available}
                           onCheckedChange={() => toggleProductAvailability(product.id, product.available)}
                         />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Apagar produto?</AlertDialogTitle>
+                              <AlertDialogDescription>Este produto será permanentemente apagado.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteProduct(product.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Apagar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}
