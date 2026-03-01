@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle, Store, Search, Video, Calendar, Clock, Send, Plus } from "lucide-react";
+import { MessageCircle, Store, Search, Video, Calendar, Clock, Send, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,20 @@ import { cn } from "@/lib/utils";
 import { format, formatDistanceToNow } from "date-fns";
 import { pt } from "date-fns/locale";
 import { useAdminPartnerChat } from "@/hooks/useAdminPartnerChat";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useVideoConferences } from "@/hooks/useVideoConferences";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import OnlineIndicator from "@/components/chat/OnlineIndicator";
@@ -42,6 +56,16 @@ const AdminPartnerComm = () => {
   });
   const [activeJitsiRoom, setActiveJitsiRoom] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const deletePartnerMessages = async (partnerId: string) => {
+    const { error } = await supabase.from("admin_partner_messages").delete().eq("partner_id", partnerId);
+    if (error) { toast.error("Erro ao apagar mensagens"); return; }
+    toast.success("Mensagens apagadas com sucesso");
+    queryClient.invalidateQueries({ queryKey: ["admin-partner-messages"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-partner-last-messages"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-partner-unread"] });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -183,6 +207,23 @@ const AdminPartnerComm = () => {
                       {upcomingConfs.length} agendada(s)
                     </Badge>
                   )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Apagar mensagens?</AlertDialogTitle>
+                        <AlertDialogDescription>Todas as mensagens com {activePartner.name} serão permanentemente apagadas.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deletePartnerMessages(activePartnerId!)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Apagar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1.5">
