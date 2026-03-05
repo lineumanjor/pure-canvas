@@ -188,6 +188,21 @@ export type Database = {
           },
         ]
       }
+      keep_alive: {
+        Row: {
+          id: number
+          ultima_atividade: string | null
+        }
+        Insert: {
+          id?: number
+          ultima_atividade?: string | null
+        }
+        Update: {
+          id?: number
+          ultima_atividade?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

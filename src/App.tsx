@@ -18,6 +18,7 @@ import ReviewOrder from "./pages/ReviewOrder";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
+import Blog from "./pages/Blog";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/avaliar/:orderId" element={<ReviewOrder />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/publicacoes" element={<Blog />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
