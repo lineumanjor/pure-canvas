@@ -58,47 +58,123 @@ export type Database = {
           },
         ]
       }
+      blog_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
+          audio_url: string | null
           content: string
           created_at: string
           created_by: string | null
           expires_at: string | null
+          featured: boolean
           id: string
           image_url: string | null
           is_active: boolean
           published_at: string
           title: string | null
           updated_at: string
+          video_url: string | null
           views_count: number
         }
         Insert: {
+          audio_url?: string | null
           content: string
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          featured?: boolean
           id?: string
           image_url?: string | null
           is_active?: boolean
           published_at?: string
           title?: string | null
           updated_at?: string
+          video_url?: string | null
           views_count?: number
         }
         Update: {
+          audio_url?: string | null
           content?: string
           created_at?: string
           created_by?: string | null
           expires_at?: string | null
+          featured?: boolean
           id?: string
           image_url?: string | null
           is_active?: boolean
           published_at?: string
           title?: string | null
           updated_at?: string
+          video_url?: string | null
           views_count?: number
         }
         Relationships: []
+      }
+      blog_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {

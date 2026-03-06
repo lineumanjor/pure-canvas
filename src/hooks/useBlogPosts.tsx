@@ -7,6 +7,9 @@ export interface BlogPost {
   title: string | null;
   content: string;
   image_url: string | null;
+  video_url: string | null;
+  audio_url: string | null;
+  featured: boolean;
   published_at: string;
   expires_at: string | null;
   is_active: boolean;
@@ -14,6 +17,24 @@ export interface BlogPost {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface BlogComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profile?: { full_name: string | null; avatar_url: string | null };
+}
+
+export interface BlogReaction {
+  id: string;
+  post_id: string;
+  user_id: string;
+  reaction: string;
+  created_at: string;
 }
 
 export const useBlogPosts = () => {
@@ -31,7 +52,7 @@ export const useBlogPosts = () => {
       console.error('Error fetching blog posts:', error);
       toast.error('Erro ao carregar avisos');
     } else {
-      setPosts(data || []);
+      setPosts((data as BlogPost[]) || []);
     }
     setLoading(false);
   };
@@ -43,7 +64,7 @@ export const useBlogPosts = () => {
   const createPost = async (post: Omit<BlogPost, 'id' | 'created_at' | 'updated_at' | 'views_count'>) => {
     const { data, error } = await supabase
       .from('blog_posts')
-      .insert(post)
+      .insert(post as any)
       .select()
       .single();
 
@@ -61,7 +82,7 @@ export const useBlogPosts = () => {
   const updatePost = async (id: string, updates: Partial<BlogPost>) => {
     const { error } = await supabase
       .from('blog_posts')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id);
 
     if (error) {
@@ -111,4 +132,112 @@ export const useBlogPosts = () => {
     deletePost,
     incrementViews,
   };
+};
+
+export const useBlogComments = (postId: string) => {
+  const [comments, setComments] = useState<BlogComment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchComments = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('blog_comments' as any)
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+    } else {
+      // Fetch profiles for each comment
+      const commentsData = (data || []) as unknown as BlogComment[];
+      const userIds = [...new Set(commentsData.map(c => c.user_id))];
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        commentsData.forEach(c => {
+          const p = profileMap.get(c.user_id);
+          if (p) c.profile = { full_name: p.full_name, avatar_url: p.avatar_url };
+        });
+      }
+      
+      setComments(commentsData);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (postId) fetchComments();
+  }, [postId]);
+
+  const addComment = async (userId: string, content: string) => {
+    const { error } = await supabase
+      .from('blog_comments' as any)
+      .insert({ post_id: postId, user_id: userId, content } as any);
+
+    if (error) {
+      toast.error('Erro ao adicionar comentário');
+      return false;
+    }
+    fetchComments();
+    return true;
+  };
+
+  const deleteComment = async (commentId: string) => {
+    const { error } = await supabase
+      .from('blog_comments' as any)
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      toast.error('Erro ao eliminar comentário');
+      return false;
+    }
+    fetchComments();
+    return true;
+  };
+
+  return { comments, loading, addComment, deleteComment, fetchComments };
+};
+
+export const useBlogReactions = (postId: string) => {
+  const [reactions, setReactions] = useState<BlogReaction[]>([]);
+
+  const fetchReactions = async () => {
+    const { data } = await supabase
+      .from('blog_reactions' as any)
+      .select('*')
+      .eq('post_id', postId);
+    setReactions((data || []) as unknown as BlogReaction[]);
+  };
+
+  useEffect(() => {
+    if (postId) fetchReactions();
+  }, [postId]);
+
+  const toggleReaction = async (userId: string, reaction: string) => {
+    const existing = reactions.find(r => r.user_id === userId && r.reaction === reaction);
+    
+    if (existing) {
+      await supabase
+        .from('blog_reactions' as any)
+        .delete()
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('blog_reactions' as any)
+        .insert({ post_id: postId, user_id: userId, reaction } as any);
+    }
+    fetchReactions();
+  };
+
+  const getReactionCount = (reaction: string) => reactions.filter(r => r.reaction === reaction).length;
+  const hasReacted = (userId: string, reaction: string) => reactions.some(r => r.user_id === userId && r.reaction === reaction);
+
+  return { reactions, toggleReaction, getReactionCount, hasReacted, fetchReactions };
 };
