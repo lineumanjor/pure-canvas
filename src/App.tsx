@@ -43,7 +43,7 @@ const App = () => (
               <Route path="/avaliar/:orderId" element={<ReviewOrder />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/faq" element={<FAQ />} />
-              <Route path="/publicacoes" element={<Blog />} />
+              <Route path="/blog" element={<Blog />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
