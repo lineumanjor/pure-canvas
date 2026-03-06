@@ -19,7 +19,7 @@ const Footer = () => {
       href: "#parceiros"
     }, {
       name: "Blog",
-      href: "#"
+      href: "/blog"
     }],
     suporte: [{
       name: "Central de Ajuda",

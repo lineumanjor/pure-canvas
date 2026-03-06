@@ -36,7 +36,7 @@ const BlogStatus = () => {
     <section className="py-5 bg-gradient-to-r from-secondary/50 to-secondary/30 border-b border-border/50">
       <div className="container mx-auto px-4">
         <button
-          onClick={() => navigate('/publicacoes')}
+          onClick={() => navigate('/blog')}
           className="w-full group"
         >
           <div className="flex items-center justify-between mb-3">
