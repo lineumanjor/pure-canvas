@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ShoppingCart, Plus, Minus, Trash2, Package, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import ProcessingOverlay from "./ProcessingOverlay";
 
 interface CartDrawerProps {
   isOpen: boolean;
