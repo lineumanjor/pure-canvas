@@ -362,9 +362,13 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                                 e.stopPropagation();
                                 const maxStock = stockInfo[item.productId];
                                 if (maxStock !== null && maxStock !== undefined && item.quantity >= maxStock) {
+                                  const userName = profile?.full_name?.split(" ")[0] || "amigo(a)";
+                                  const isFemale = profile?.gender === "feminino";
                                   toast({
-                                    title: "Limite de stock atingido",
-                                    description: `Apenas ${maxStock} unidade(s) disponível(eis) de "${item.productName}".`,
+                                    title: isFemale
+                                      ? `😅 Lamento amiga ${userName}, não há mais!`
+                                      : `😅 Lamento amigo ${userName}, não há mais!`,
+                                    description: `"${item.productName}" tem apenas ${maxStock} unidade(s) disponível.`,
                                     variant: "destructive",
                                   });
                                   return;
