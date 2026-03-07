@@ -213,8 +213,10 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+    <>
+      <ProcessingOverlay isVisible={isSubmitting} />
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
@@ -446,6 +448,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         )}
       </SheetContent>
     </Sheet>
+    </>
   );
 };
 
