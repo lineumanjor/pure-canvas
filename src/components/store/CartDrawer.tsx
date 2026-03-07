@@ -343,8 +343,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const newQty = item.quantity - 1;
-                                updateQuantity(item.id, newQty);
+                                updateQuantity(item.id, item.quantity - 1);
                               }}
                               type="button"
                             >
@@ -360,9 +359,18 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const newQty = item.quantity + 1;
-                                updateQuantity(item.id, newQty);
+                                const maxStock = stockInfo[item.productId];
+                                if (maxStock !== null && maxStock !== undefined && item.quantity >= maxStock) {
+                                  toast({
+                                    title: "Limite de stock atingido",
+                                    description: `Apenas ${maxStock} unidade(s) disponível(eis) de "${item.productName}".`,
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                updateQuantity(item.id, item.quantity + 1);
                               }}
+                              disabled={stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && item.quantity >= (stockInfo[item.productId] as number)}
                               type="button"
                             >
                               <Plus className="w-3 h-3" />
@@ -376,6 +384,11 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
+                          {stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && (stockInfo[item.productId] as number) <= 5 && (
+                            <p className="text-xs text-amber-500 mt-1">
+                              Apenas {stockInfo[item.productId]} em stock
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     ))}
