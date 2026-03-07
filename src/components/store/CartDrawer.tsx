@@ -34,6 +34,24 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     notes: "",
   });
 
+  // Fetch real stock when cart opens
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      const productIds = items.map(i => i.productId);
+      supabase
+        .from("products")
+        .select("id, stock")
+        .in("id", productIds)
+        .then(({ data }) => {
+          if (data) {
+            const info: Record<string, number | null> = {};
+            data.forEach(p => { info[p.id] = p.stock; });
+            setStockInfo(info);
+          }
+        });
+    }
+  }, [isOpen, items.length]);
+
   // Pre-fill delivery info from profile
   useEffect(() => {
     if (isCheckout && profile) {
