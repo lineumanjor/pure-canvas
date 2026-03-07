@@ -106,12 +106,13 @@ const PartnerStore = () => {
     const currentCartItem = partnerCartItems.find(i => i.productId === product.id);
     const currentQty = currentCartItem?.quantity || 0;
     if (product.stock !== null && currentQty >= product.stock) {
+      const userName = profile?.full_name?.split(" ")[0] || "amigo(a)";
       const isFemale = profile?.gender === "feminino";
       toast({
         title: isFemale 
-          ? "Lamento minha cota! 😅 Excedeu o limite!" 
-          : "Lamento meu cota! 😅 Excedeu o limite!",
-        description: `Só temos ${product.stock} unidade(s) de "${product.name}" disponível.`,
+          ? `😅 Lamento amiga ${userName}, não há mais!` 
+          : `😅 Lamento amigo ${userName}, não há mais!`,
+        description: `"${product.name}" tem apenas ${product.stock} unidade(s) disponível.`,
         variant: "destructive",
       });
       return;
