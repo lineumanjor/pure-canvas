@@ -51,11 +51,17 @@ const ProductCard = ({ product, index, cartQuantity, onAdd, onRemove }: ProductC
                 {product.category}
               </Badge>
             )}
-            {/* Stock indicator */}
+            {/* Stock indicator - always visible */}
+            {product.stock !== null && product.stock > 5 && (
+              <Badge className="absolute top-2 right-2 gap-1 bg-primary/90 hover:bg-primary/90 text-primary-foreground border-0 backdrop-blur-sm">
+                <Package className="w-3 h-3" />
+                {product.stock} em stock
+              </Badge>
+            )}
             {isLowStock && (
-              <Badge variant="destructive" className="absolute top-2 right-2 gap-1">
+              <Badge variant="destructive" className="absolute top-2 right-2 gap-1 animate-pulse">
                 <AlertCircle className="w-3 h-3" />
-                Últimas {product.stock}
+                Últimas {product.stock} unidades!
               </Badge>
             )}
             {outOfStock && (

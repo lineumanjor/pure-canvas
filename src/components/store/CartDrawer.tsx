@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ShoppingCart, Plus, Minus, Trash2, Package, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import ProcessingOverlay from "./ProcessingOverlay";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -212,8 +213,10 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
+    <>
+      <ProcessingOverlay isVisible={isSubmitting} />
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
@@ -361,9 +364,13 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                                 e.stopPropagation();
                                 const maxStock = stockInfo[item.productId];
                                 if (maxStock !== null && maxStock !== undefined && item.quantity >= maxStock) {
+                                  const userName = profile?.full_name?.split(" ")[0] || "amigo(a)";
+                                  const isFemale = profile?.gender === "feminino";
                                   toast({
-                                    title: "Limite de stock atingido",
-                                    description: `Apenas ${maxStock} unidade(s) disponível(eis) de "${item.productName}".`,
+                                    title: isFemale
+                                      ? `😅 Lamento amiga ${userName}, não há mais!`
+                                      : `😅 Lamento amigo ${userName}, não há mais!`,
+                                    description: `"${item.productName}" tem apenas ${maxStock} unidade(s) disponível.`,
                                     variant: "destructive",
                                   });
                                   return;
@@ -385,7 +392,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                             </Button>
                           </div>
                           {stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && (stockInfo[item.productId] as number) <= 5 && (
-                            <p className="text-xs text-amber-500 mt-1">
+                            <p className="text-xs text-destructive mt-1">
                               Apenas {stockInfo[item.productId]} em stock
                             </p>
                           )}
@@ -441,6 +448,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
         )}
       </SheetContent>
     </Sheet>
+    </>
   );
 };
 
