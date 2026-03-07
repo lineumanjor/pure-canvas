@@ -21,6 +21,7 @@ interface CartDrawerProps {
 
 const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
   const { items, updateQuantity, removeItem, getTotal, clearCart } = useCart();
+  const [stockInfo, setStockInfo] = useState<Record<string, number | null>>({});
   const { user } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
@@ -32,6 +33,24 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     address: "",
     notes: "",
   });
+
+  // Fetch real stock when cart opens
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      const productIds = items.map(i => i.productId);
+      supabase
+        .from("products")
+        .select("id, stock")
+        .in("id", productIds)
+        .then(({ data }) => {
+          if (data) {
+            const info: Record<string, number | null> = {};
+            data.forEach(p => { info[p.id] = p.stock; });
+            setStockInfo(info);
+          }
+        });
+    }
+  }, [isOpen, items.length]);
 
   // Pre-fill delivery info from profile
   useEffect(() => {
@@ -56,6 +75,34 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     return acc;
   }, {} as Record<string, { partnerName: string; items: typeof items }>);
 
+  // Validate stock availability before checkout
+  const validateStock = async (): Promise<{ valid: boolean; issues: string[] }> => {
+    const issues: string[] = [];
+    const productIds = items.map(i => i.productId);
+    
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, name, stock")
+      .in("id", productIds);
+    
+    if (!products) return { valid: true, issues: [] };
+    
+    for (const item of items) {
+      const product = products.find(p => p.id === item.productId);
+      if (product && product.stock !== null) {
+        if (product.stock === 0) {
+          issues.push(`"${item.productName}" está esgotado.`);
+          removeItem(item.id);
+        } else if (item.quantity > product.stock) {
+          issues.push(`"${item.productName}" tem apenas ${product.stock} unidade(s). Ajustámos a quantidade.`);
+          updateQuantity(item.id, product.stock);
+        }
+      }
+    }
+    
+    return { valid: issues.length === 0, issues };
+  };
+
   const handleCheckout = async () => {
     if (!user) {
       toast({
@@ -78,6 +125,19 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
     setIsSubmitting(true);
 
     try {
+      // Validate stock before proceeding
+      const { valid, issues } = await validateStock();
+      if (!valid) {
+        toast({
+          title: "Stock actualizado",
+          description: issues.join(" "),
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        setIsCheckout(false);
+        return;
+      }
+
       // Create orders for each partner
       for (const [partnerId, partnerData] of Object.entries(itemsByPartner)) {
         const partnerTotal = partnerData.items.reduce(
@@ -102,7 +162,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
 
         if (orderError) throw orderError;
 
-        // Create order items
+        // Create order items (triggers will validate & decrement stock)
         const orderItems = partnerData.items.map((item) => ({
           order_id: order.id,
           product_id: item.productId,
@@ -116,10 +176,25 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
           .from("order_items")
           .insert(orderItems);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          // Check if it's a stock error from the trigger
+          const errMsg = (itemsError as any).message || "";
+          if (errMsg.includes("Stock insuficiente")) {
+            toast({
+              title: "Stock insuficiente",
+              description: "Alguns produtos ficaram sem stock. O carrinho foi actualizado.",
+              variant: "destructive",
+            });
+            await validateStock();
+            setIsCheckout(false);
+            setIsSubmitting(false);
+            return;
+          }
+          throw itemsError;
+        }
       }
 
-      toast({ title: "Pedido(s) realizado(s) com sucesso!" });
+      toast({ title: "Pedido(s) realizado(s) com sucesso! 🎉" });
       clearCart();
       setIsCheckout(false);
       setDeliveryInfo({ phone: "", address: "", notes: "" });
@@ -268,8 +343,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const newQty = item.quantity - 1;
-                                updateQuantity(item.id, newQty);
+                                updateQuantity(item.id, item.quantity - 1);
                               }}
                               type="button"
                             >
@@ -285,9 +359,18 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                const newQty = item.quantity + 1;
-                                updateQuantity(item.id, newQty);
+                                const maxStock = stockInfo[item.productId];
+                                if (maxStock !== null && maxStock !== undefined && item.quantity >= maxStock) {
+                                  toast({
+                                    title: "Limite de stock atingido",
+                                    description: `Apenas ${maxStock} unidade(s) disponível(eis) de "${item.productName}".`,
+                                    variant: "destructive",
+                                  });
+                                  return;
+                                }
+                                updateQuantity(item.id, item.quantity + 1);
                               }}
+                              disabled={stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && item.quantity >= (stockInfo[item.productId] as number)}
                               type="button"
                             >
                               <Plus className="w-3 h-3" />
@@ -301,6 +384,11 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
+                          {stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && (stockInfo[item.productId] as number) <= 5 && (
+                            <p className="text-xs text-amber-500 mt-1">
+                              Apenas {stockInfo[item.productId]} em stock
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     ))}
