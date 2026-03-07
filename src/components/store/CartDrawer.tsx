@@ -392,7 +392,7 @@ const CartDrawer = ({ isOpen, onClose }: CartDrawerProps) => {
                             </Button>
                           </div>
                           {stockInfo[item.productId] !== null && stockInfo[item.productId] !== undefined && (stockInfo[item.productId] as number) <= 5 && (
-                            <p className="text-xs text-amber-500 mt-1">
+                            <p className="text-xs text-destructive mt-1">
                               Apenas {stockInfo[item.productId]} em stock
                             </p>
                           )}

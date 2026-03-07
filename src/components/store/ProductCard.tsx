@@ -53,7 +53,7 @@ const ProductCard = ({ product, index, cartQuantity, onAdd, onRemove }: ProductC
             )}
             {/* Stock indicator - always visible */}
             {product.stock !== null && product.stock > 5 && (
-              <Badge className="absolute top-2 right-2 gap-1 bg-emerald-500/90 hover:bg-emerald-500/90 text-white border-0 backdrop-blur-sm">
+              <Badge className="absolute top-2 right-2 gap-1 bg-primary/90 hover:bg-primary/90 text-primary-foreground border-0 backdrop-blur-sm">
                 <Package className="w-3 h-3" />
                 {product.stock} em stock
               </Badge>
