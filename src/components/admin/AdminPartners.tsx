@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { 
   Table, 
   TableBody, 
@@ -20,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, X, Eye, Search, Users, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Check, X, Eye, Search, Users, Clock, CheckCircle, XCircle, Trash2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -47,6 +48,9 @@ interface Partner {
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   user_id: string | null;
+  is_top: boolean;
+  top_marked_at: string | null;
+  top_marked_by: string | null;
 }
 
 const AdminPartners = () => {
@@ -104,6 +108,28 @@ const AdminPartners = () => {
       
       fetchPartners();
       setDetailsOpen(false);
+    }
+  };
+
+  const toggleTopStatus = async (partnerId: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from('partners')
+      .update({ 
+        is_top: !currentStatus,
+        top_marked_at: !currentStatus ? new Date().toISOString() : null,
+        top_marked_by: !currentStatus ? user?.id : null
+      })
+      .eq('id', partnerId);
+
+    if (error) {
+      toast.error('Erro ao atualizar destaque do parceiro');
+      console.error(error);
+    } else {
+      toast.success(!currentStatus ? 'Parceiro marcado como TOP!' : 'Destaque TOP removido');
+      fetchPartners();
+      if (selectedPartner?.id === partnerId) {
+        setSelectedPartner(prev => prev ? { ...prev, is_top: !currentStatus } : null);
+      }
     }
   };
 
@@ -225,6 +251,7 @@ const AdminPartners = () => {
                     <TableHead className="hidden md:table-cell">Categoria</TableHead>
                     <TableHead className="hidden lg:table-cell">Localização</TableHead>
                     <TableHead>Estado</TableHead>
+                    <TableHead className="text-center">TOP</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -233,13 +260,23 @@ const AdminPartners = () => {
                     <TableRow key={partner.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{partner.name}</p>
+                          <p className="font-medium flex items-center gap-2">
+                            {partner.name}
+                            {partner.is_top && <Sparkles className="w-3.5 h-3.5 text-primary" />}
+                          </p>
                           <p className="text-sm text-muted-foreground">{partner.email}</p>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{partner.category}</TableCell>
                       <TableCell className="hidden lg:table-cell">{partner.location}</TableCell>
                       <TableCell>{getStatusBadge(partner.status)}</TableCell>
+                      <TableCell className="text-center">
+                        <Switch 
+                          checked={partner.is_top}
+                          onCheckedChange={() => toggleTopStatus(partner.id, partner.is_top)}
+                          disabled={partner.status !== 'approved'}
+                        />
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
@@ -304,7 +341,10 @@ const AdminPartners = () => {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Detalhes do Parceiro</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Detalhes do Parceiro
+              {selectedPartner?.is_top && <Badge className="bg-primary/20 text-primary border-0"><Sparkles className="w-3 h-3 mr-1" /> TOP</Badge>}
+            </DialogTitle>
             <DialogDescription>Informações completas do parceiro</DialogDescription>
           </DialogHeader>
           {selectedPartner && (
@@ -349,6 +389,26 @@ const AdminPartners = () => {
                   <p className="font-medium">{selectedPartner.description}</p>
                 </div>
               )}
+              
+              <div className="pt-4 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Destaque TOP</p>
+                    <p className="text-xs text-muted-foreground mt-1">Aparecer na secção de lojas verificadas</p>
+                  </div>
+                  <Switch 
+                    checked={selectedPartner.is_top}
+                    onCheckedChange={() => toggleTopStatus(selectedPartner.id, selectedPartner.is_top)}
+                    disabled={selectedPartner.status !== 'approved'}
+                  />
+                </div>
+                {selectedPartner.is_top && selectedPartner.top_marked_at && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Marcado como TOP em {new Date(selectedPartner.top_marked_at).toLocaleDateString('pt-AO')}
+                  </p>
+                )}
+              </div>
+
               <div>
                 <p className="text-sm text-muted-foreground">Data de Registo</p>
                 <p className="font-medium">

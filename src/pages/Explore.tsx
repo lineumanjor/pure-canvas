@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Search, MapPin, Star, Users, ArrowRight, Sparkles, Store, Grid3x3, Package } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { Search, MapPin, Star, Package, Sparkles, Store, Grid3x3 } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/select";
 import { usePartners } from "@/hooks/usePartners";
 import { useCategories } from "@/hooks/useCategories";
-import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface Product {
   id: string;
@@ -36,18 +37,15 @@ interface Product {
   };
 }
 
-const Partners = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+const Explore = () => {
+  const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "partners";
   
   const { partners, loading: partnersLoading } = usePartners();
   const { categories, loading: categoriesLoading } = useCategories();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-
-  const handleTabChange = (value: string) => {
-    setSearchParams({ tab: value });
-  };
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   // Fetch all products
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -64,7 +62,7 @@ const Partners = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as unknown as Product[];
+      return data as Product[];
     },
   });
 
@@ -145,7 +143,7 @@ const Partners = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    placeholder="Pesquisar lojas, produtos ou localização..."
+                    placeholder="Pesquisar..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 h-12 bg-background border-border/50"
@@ -172,19 +170,17 @@ const Partners = () => {
         {/* Tabs Section */}
         <section className="py-12 sm:py-16">
           <div className="container-custom">
-            <Tabs defaultValue={initialTab} onValueChange={handleTabChange} className="w-full">
-              <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-md grid-cols-2">
-                  <TabsTrigger value="partners" className="gap-2">
-                    <Store className="w-4 h-4" />
-                    Lojas
-                  </TabsTrigger>
-                  <TabsTrigger value="products" className="gap-2">
-                    <Grid3x3 className="w-4 h-4" />
-                    Produtos
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+                <TabsTrigger value="partners" className="gap-2">
+                  <Store className="w-4 h-4" />
+                  Lojas
+                </TabsTrigger>
+                <TabsTrigger value="products" className="gap-2">
+                  <Grid3x3 className="w-4 h-4" />
+                  Produtos
+                </TabsTrigger>
+              </TabsList>
 
               {/* Partners Tab */}
               <TabsContent value="partners" className="mt-0">
@@ -203,12 +199,10 @@ const Partners = () => {
                   </div>
                 ) : filteredPartners.length > 0 ? (
                   <>
-                    <div className="flex items-center justify-between mb-6">
-                      <p className="text-muted-foreground">
-                        <span className="font-semibold text-foreground">{filteredPartners.length}</span>{" "}
-                        {filteredPartners.length === 1 ? "loja encontrada" : "lojas encontradas"}
-                      </p>
-                    </div>
+                    <p className="text-muted-foreground mb-6">
+                      <span className="font-semibold text-foreground">{filteredPartners.length}</span>{" "}
+                      {filteredPartners.length === 1 ? "loja encontrada" : "lojas encontradas"}
+                    </p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {filteredPartners.map((partner, index) => (
@@ -234,15 +228,9 @@ const Partners = () => {
                                     </span>
                                   </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                 <Badge className="absolute top-3 left-3 bg-background/90 text-foreground border-0">
                                   {partner.category}
                                 </Badge>
-                                {partner.is_top && (
-                                  <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground border-0">
-                                    <Sparkles className="w-3 h-3 mr-1" /> TOP
-                                  </Badge>
-                                )}
                               </div>
                               <CardContent className="p-4">
                                 <h3 className="font-display font-semibold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
@@ -257,19 +245,16 @@ const Partners = () => {
                                     {partner.description}
                                   </p>
                                 )}
-                                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                                  <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-primary fill-primary" />
-                                    <span className="font-medium text-foreground">
-                                      {partner.rating?.toFixed(1) || "Novo"}
+                                <div className="flex items-center gap-1 pt-2 border-t border-border/50">
+                                  <Star className="w-4 h-4 text-primary fill-primary" />
+                                  <span className="font-medium text-foreground">
+                                    {partner.rating?.toFixed(1) || "Novo"}
+                                  </span>
+                                  {partner.reviews_count > 0 && (
+                                    <span className="text-muted-foreground text-sm">
+                                      ({partner.reviews_count})
                                     </span>
-                                    {partner.reviews_count > 0 && (
-                                      <span className="text-muted-foreground text-sm">
-                                        ({partner.reviews_count})
-                                      </span>
-                                    )}
-                                  </div>
-                                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
@@ -279,33 +264,26 @@ const Partners = () => {
                     </div>
                   </>
                 ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center py-20"
-                  >
-                    <div className="max-w-lg mx-auto">
-                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Store className="w-10 h-10 text-primary" />
-                      </div>
-                      <h2 className="font-display text-2xl font-bold text-foreground mb-3">
-                        Nenhuma loja encontrada
-                      </h2>
-                      <p className="text-muted-foreground mb-6 leading-relaxed">
-                        Não encontrámos lojas com os critérios selecionados. Tente ajustar a sua pesquisa ou filtros.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setSelectedCategory("all");
-                        }}
-                      >
-                        Limpar filtros
-                      </Button>
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Store className="w-10 h-10 text-primary" />
                     </div>
-                  </motion.div>
+                    <h2 className="font-display text-2xl font-bold text-foreground mb-3">
+                      Nenhuma loja encontrada
+                    </h2>
+                    <p className="text-muted-foreground mb-6">
+                      Tente ajustar os seus filtros de pesquisa.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("all");
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  </div>
                 )}
               </TabsContent>
 
@@ -326,14 +304,12 @@ const Partners = () => {
                   </div>
                 ) : filteredProducts.length > 0 ? (
                   <>
-                    <div className="flex items-center justify-between mb-6">
-                      <p className="text-muted-foreground">
-                        <span className="font-semibold text-foreground">{filteredProducts.length}</span>{" "}
-                        {filteredProducts.length === 1 ? "produto encontrado" : "produtos encontrados"}
-                      </p>
-                    </div>
+                    <p className="text-muted-foreground mb-6">
+                      <span className="font-semibold text-foreground">{filteredProducts.length}</span>{" "}
+                      {filteredProducts.length === 1 ? "produto encontrado" : "produtos encontrados"}
+                    </p>
                     
-                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {filteredProducts.map((product, index) => (
                         <motion.div
                           key={product.id}
@@ -356,23 +332,26 @@ const Partners = () => {
                                   </div>
                                 )}
                                 {product.category && (
-                                  <Badge className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground border-0">
+                                  <Badge className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm">
                                     {product.category}
                                   </Badge>
                                 )}
-                                <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background/90 to-transparent">
-                                  <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
-                                    <Store className="w-3 h-3 text-primary" />
-                                    <span className="line-clamp-1">{product.partner.name}</span>
-                                  </div>
-                                </div>
                               </div>
-                              <CardContent className="p-3 sm:p-4">
-                                <h3 className="font-medium text-foreground mb-1 line-clamp-2 text-sm sm:text-base">
+                              <CardContent className="p-4">
+                                <h3 className="font-medium text-foreground mb-1 line-clamp-1">
                                   {product.name}
                                 </h3>
-                                <div className="pt-2 mt-auto">
-                                  <span className="text-base sm:text-lg font-bold text-primary">
+                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+                                  <Store className="w-3.5 h-3.5" />
+                                  <span className="line-clamp-1">{product.partner.name}</span>
+                                </div>
+                                {product.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                    {product.description}
+                                  </p>
+                                )}
+                                <div className="pt-2 border-t border-border/50">
+                                  <span className="text-lg font-bold text-primary">
                                     {Number(product.price).toLocaleString("pt-AO")} Kz
                                   </span>
                                 </div>
@@ -384,33 +363,26 @@ const Partners = () => {
                     </div>
                   </>
                 ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center py-20"
-                  >
-                    <div className="max-w-lg mx-auto">
-                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Package className="w-10 h-10 text-primary" />
-                      </div>
-                      <h2 className="font-display text-2xl font-bold text-foreground mb-3">
-                        Nenhum produto encontrado
-                      </h2>
-                      <p className="text-muted-foreground mb-6 leading-relaxed">
-                        Não encontrámos produtos com os critérios selecionados. Tente ajustar a sua pesquisa ou filtros.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setSelectedCategory("all");
-                        }}
-                      >
-                        Limpar filtros
-                      </Button>
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Package className="w-10 h-10 text-primary" />
                     </div>
-                  </motion.div>
+                    <h2 className="font-display text-2xl font-bold text-foreground mb-3">
+                      Nenhum produto encontrado
+                    </h2>
+                    <p className="text-muted-foreground mb-6">
+                      Tente ajustar os seus filtros de pesquisa.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("all");
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
@@ -423,4 +395,4 @@ const Partners = () => {
   );
 };
 
-export default Partners;
+export default Explore;

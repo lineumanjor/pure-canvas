@@ -15,6 +15,7 @@ export interface Partner {
   rating: number;
   reviews_count: number;
   status: 'pending' | 'approved' | 'rejected';
+  is_top: boolean;
 }
 
 export const usePartners = () => {
