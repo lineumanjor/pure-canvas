@@ -50,12 +50,15 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
-  // Filter partners based on selected category
+  // Filter partners to show only TOP partners and match selected category
   const filteredPartners = useMemo(() => {
-    if (!selectedCategory) return partners;
-    return partners.filter(partner => 
-      partner.category.toLowerCase() === selectedCategory.toLowerCase()
-    );
+    let filtered = partners.filter(partner => partner.is_top);
+    if (selectedCategory) {
+      filtered = filtered.filter(partner => 
+        partner.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
+    return filtered;
   }, [partners, selectedCategory]);
 
   const handlePartnerClick = (partnerId: string) => {
