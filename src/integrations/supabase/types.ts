@@ -444,12 +444,15 @@ export type Database = {
           id: string
           image_url: string | null
           instagram: string | null
+          is_top: boolean
           location: string
           name: string
           phone: string | null
           rating: number | null
           reviews_count: number | null
           status: Database["public"]["Enums"]["partner_status"]
+          top_marked_at: string | null
+          top_marked_by: string | null
           updated_at: string
           user_id: string | null
           whatsapp: string | null
@@ -466,12 +469,15 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_top?: boolean
           location: string
           name: string
           phone?: string | null
           rating?: number | null
           reviews_count?: number | null
           status?: Database["public"]["Enums"]["partner_status"]
+          top_marked_at?: string | null
+          top_marked_by?: string | null
           updated_at?: string
           user_id?: string | null
           whatsapp?: string | null
@@ -488,12 +494,15 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_top?: boolean
           location?: string
           name?: string
           phone?: string | null
           rating?: number | null
           reviews_count?: number | null
           status?: Database["public"]["Enums"]["partner_status"]
+          top_marked_at?: string | null
+          top_marked_by?: string | null
           updated_at?: string
           user_id?: string | null
           whatsapp?: string | null
