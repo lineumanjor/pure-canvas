@@ -135,10 +135,14 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                 animate={isInView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <Button variant="outline" className="gap-2 shrink-0 group">
-                  Ver todos
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Button>
+                 <Button
+                   variant="outline"
+                   className="gap-2 shrink-0 group"
+                   onClick={() => navigate('/parceiros')}
+                 >
+                   Ver todos
+                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                 </Button>
               </motion.div>
             )}
           </div>
