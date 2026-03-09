@@ -93,6 +93,7 @@ const Partners = () => {
 
       const matchesCategory =
         selectedCategory === "all" ||
+        product.partner.category?.toLowerCase() === selectedCategory.toLowerCase() ||
         product.category?.toLowerCase() === selectedCategory.toLowerCase();
 
       return matchesSearch && matchesCategory;
