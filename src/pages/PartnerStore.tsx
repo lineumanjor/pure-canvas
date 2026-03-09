@@ -102,6 +102,16 @@ const PartnerStore = () => {
   }) => {
     if (!partner) return;
 
+    // Block purchases on frozen stores
+    if (partner.is_frozen) {
+      toast({
+        title: "Loja temporariamente indisponível",
+        description: "Esta loja está com o plano suspenso. Não é possível fazer compras de momento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check stock limit
     const currentCartItem = partnerCartItems.find(i => i.productId === product.id);
     const currentQty = currentCartItem?.quantity || 0;
