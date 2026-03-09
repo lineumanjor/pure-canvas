@@ -395,9 +395,9 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                       className="flex items-center gap-1"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <Star className="w-4 h-4 fill-primary text-primary" />
-                      <span className="font-semibold text-foreground">{Number(partner.rating).toFixed(1)}</span>
-                      <span className="text-sm text-muted-foreground">({partner.reviews_count})</span>
+                       <Star className="w-4 h-4 fill-primary text-primary" />
+                       <span className="font-semibold text-foreground">{Number(partner.rating ?? 0).toFixed(1)}</span>
+                       <span className="text-sm text-muted-foreground">({partner.reviews_count ?? 0})</span>
                     </motion.div>
                     <motion.div 
                       className="flex items-center gap-1 text-sm text-muted-foreground"
