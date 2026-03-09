@@ -126,7 +126,7 @@ const AdminOrders = () => {
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const completedOrders = orders.filter(o => o.status === 'delivered').length;
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.commission_amount || 0), 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-AO', {
@@ -204,7 +204,7 @@ const AdminOrders = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Comissões</p>
+                <p className="text-sm text-muted-foreground">Receita Total</p>
                 <p className="text-2xl font-bold text-primary">{formatPrice(totalRevenue)}</p>
               </div>
               <Package className="h-8 w-8 text-primary opacity-80" />
@@ -241,7 +241,7 @@ const AdminOrders = () => {
                     <TableHead>ID</TableHead>
                     <TableHead className="hidden md:table-cell">Parceiro</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead className="hidden lg:table-cell">Comissão</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -263,9 +263,7 @@ const AdminOrders = () => {
                       <TableCell className="font-medium">
                         {formatPrice(order.total)}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-primary">
-                        {formatPrice(order.commission_amount || 0)}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -330,12 +328,6 @@ const AdminOrders = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total</p>
                   <p className="font-medium">{formatPrice(selectedOrder.total)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Comissão</p>
-                  <p className="font-medium text-primary">
-                    {formatPrice(selectedOrder.commission_amount || 0)}
-                  </p>
                 </div>
               </div>
 

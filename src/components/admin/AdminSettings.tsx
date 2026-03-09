@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Save, Link2, Copy, Check } from 'lucide-react';
+import { Settings, Save, Link2, Copy, Check, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SiteSettings {
@@ -14,7 +14,11 @@ interface SiteSettings {
   admin_email: string;
   admin_name: string;
   site_name: string;
-  commission_rate: string;
+  plan_price_weekly: string;
+  plan_price_monthly: string;
+  plan_price_quarterly: string;
+  payment_iban: string;
+  payment_account_holder: string;
 }
 
 const AdminSettings = () => {
@@ -25,7 +29,11 @@ const AdminSettings = () => {
     admin_email: '',
     admin_name: '',
     site_name: '',
-    commission_rate: '10',
+    plan_price_weekly: '5000',
+    plan_price_monthly: '15000',
+    plan_price_quarterly: '35000',
+    payment_iban: '',
+    payment_account_holder: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -134,26 +142,83 @@ const AdminSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="site_name">Nome do Site</Label>
+            <Input
+              id="site_name"
+              value={settings.site_name}
+              onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
+              placeholder="ESSENZA E.J"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Plan Pricing */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Preços dos Planos
+          </CardTitle>
+          <CardDescription>
+            Defina os valores dos planos de subscrição para parceiros (em AOA)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="site_name">Nome do Site</Label>
+              <Label htmlFor="plan_price_weekly">Plano Semanal (AOA)</Label>
               <Input
-                id="site_name"
-                value={settings.site_name}
-                onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
-                placeholder="ESSENZA E.J"
+                id="plan_price_weekly"
+                type="number"
+                min="0"
+                value={settings.plan_price_weekly}
+                onChange={(e) => setSettings({ ...settings, plan_price_weekly: e.target.value })}
+                placeholder="5000"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="commission_rate">Taxa de Comissão (%)</Label>
+              <Label htmlFor="plan_price_monthly">Plano Mensal (AOA)</Label>
               <Input
-                id="commission_rate"
+                id="plan_price_monthly"
                 type="number"
                 min="0"
-                max="100"
-                value={settings.commission_rate}
-                onChange={(e) => setSettings({ ...settings, commission_rate: e.target.value })}
-                placeholder="10"
+                value={settings.plan_price_monthly}
+                onChange={(e) => setSettings({ ...settings, plan_price_monthly: e.target.value })}
+                placeholder="15000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="plan_price_quarterly">Plano Trimestral (AOA)</Label>
+              <Input
+                id="plan_price_quarterly"
+                type="number"
+                min="0"
+                value={settings.plan_price_quarterly}
+                onChange={(e) => setSettings({ ...settings, plan_price_quarterly: e.target.value })}
+                placeholder="35000"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment_iban">IBAN Bancário</Label>
+              <Input
+                id="payment_iban"
+                value={settings.payment_iban}
+                onChange={(e) => setSettings({ ...settings, payment_iban: e.target.value })}
+                placeholder="AO06 0000 0000 0000 0000 0000 0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="payment_account_holder">Titular da Conta</Label>
+              <Input
+                id="payment_account_holder"
+                value={settings.payment_account_holder}
+                onChange={(e) => setSettings({ ...settings, payment_account_holder: e.target.value })}
+                placeholder="Eunice Joaquim"
               />
             </div>
           </div>

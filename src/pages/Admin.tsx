@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText, Video } from 'lucide-react';
+import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText, Video, CreditCard } from 'lucide-react';
 import AdminPartners from '@/components/admin/AdminPartners';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminOrders from '@/components/admin/AdminOrders';
@@ -12,6 +12,7 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminChats from '@/components/admin/AdminChats';
 import AdminBlog from '@/components/admin/AdminBlog';
 import AdminPartnerComm from '@/components/admin/AdminPartnerComm';
+import AdminSubscriptions from '@/components/admin/AdminSubscriptions';
 
 const Admin = () => {
   const { user, loading, isAdmin, signOut } = useAuth();
@@ -113,13 +114,20 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto gap-2 bg-transparent p-0">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 h-auto gap-2 bg-transparent p-0">
             <TabsTrigger 
               value="partners" 
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Parceiros</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="subscriptions"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Subscrições</span>
             </TabsTrigger>
             <TabsTrigger 
               value="products"
@@ -167,6 +175,10 @@ const Admin = () => {
 
           <TabsContent value="partners" className="mt-6">
             <AdminPartners />
+          </TabsContent>
+
+          <TabsContent value="subscriptions" className="mt-6">
+            <AdminSubscriptions />
           </TabsContent>
 
           <TabsContent value="products" className="mt-6">

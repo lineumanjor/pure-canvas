@@ -102,6 +102,16 @@ const PartnerStore = () => {
   }) => {
     if (!partner) return;
 
+    // Block purchases on frozen stores
+    if (partner.is_frozen) {
+      toast({
+        title: "Loja temporariamente indisponível",
+        description: "Esta loja está com o plano suspenso. Não é possível fazer compras de momento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Check stock limit
     const currentCartItem = partnerCartItems.find(i => i.productId === product.id);
     const currentQty = currentCartItem?.quantity || 0;
@@ -174,7 +184,14 @@ const PartnerStore = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Frozen store banner */}
+      {partner.is_frozen && (
+        <div className="bg-destructive/10 border-b border-destructive/20 text-center py-3 px-4">
+          <p className="text-sm text-destructive font-medium">
+            ⚠️ Esta loja está temporariamente indisponível — plano suspenso
+          </p>
+        </div>
+      )}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="container-custom py-4 flex items-center justify-between">
           <Button 
