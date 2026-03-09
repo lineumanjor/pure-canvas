@@ -126,7 +126,7 @@ const AdminOrders = () => {
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const completedOrders = orders.filter(o => o.status === 'delivered').length;
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.commission_amount || 0), 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-AO', {
