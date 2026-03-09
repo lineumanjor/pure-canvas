@@ -352,17 +352,18 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                     </Badge>
                   </div>
 
-                  {/* Top badge for first 3 partners */}
-                  {index < 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                      className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full"
-                    >
-                      Top
-                    </motion.div>
-                  )}
+                   {/* TOP badge (stores crachadas) */}
+                   {(partner.is_top || partners.every((p) => !p.is_top)) && (
+                     <motion.div
+                       initial={{ opacity: 0, scale: 0 }}
+                       animate={{ opacity: 1, scale: 1 }}
+                       transition={{ delay: 0.5 + index * 0.05, type: "spring" }}
+                       className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1"
+                     >
+                       <Sparkles className="w-3 h-3" />
+                       TOP
+                     </motion.div>
+                   )}
                 </div>
 
                 {/* Content */}
