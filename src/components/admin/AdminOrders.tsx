@@ -329,12 +329,6 @@ const AdminOrders = () => {
                   <p className="text-sm text-muted-foreground">Total</p>
                   <p className="font-medium">{formatPrice(selectedOrder.total)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Comissão</p>
-                  <p className="font-medium text-primary">
-                    {formatPrice(selectedOrder.commission_amount || 0)}
-                  </p>
-                </div>
               </div>
 
               {selectedOrder.delivery_address && (
