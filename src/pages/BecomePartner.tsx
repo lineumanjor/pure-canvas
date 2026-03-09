@@ -51,7 +51,7 @@ const partnerSchema = z.object({
 
 type PartnerFormData = z.infer<typeof partnerSchema>;
 
-type Step = 'details' | 'plan' | 'payment';
+type Step = 'details' | 'plan' | 'payment' | 'multicaixa_transfer';
 
 const BecomePartner = () => {
   const [step, setStep] = useState<Step>('details');
