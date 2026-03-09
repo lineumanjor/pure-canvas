@@ -81,6 +81,42 @@ const AdminPartners = () => {
     fetchPartners();
   }, []);
 
+  // Legacy fix: assume already-approved partners were "crachados" before the TOP system existed.
+  // When an admin opens this screen, automatically mark approved partners as TOP once.
+  useEffect(() => {
+    if (!user) return;
+    if (legacyTopBackfillDone) return;
+
+    const legacyApprovedIds = partners
+      .filter((p) => p.status === 'approved' && !p.is_top)
+      .map((p) => p.id);
+
+    if (legacyApprovedIds.length === 0) return;
+
+    setLegacyTopBackfillDone(true);
+
+    (async () => {
+      const { error } = await supabase
+        .from('partners')
+        .update({
+          is_top: true,
+          top_marked_at: new Date().toISOString(),
+          top_marked_by: user.id,
+        })
+        .in('id', legacyApprovedIds);
+
+      if (error) {
+        console.error(error);
+        toast.error('Erro ao marcar lojas antigas como TOP');
+        setLegacyTopBackfillDone(false);
+        return;
+      }
+
+      toast.success(`${legacyApprovedIds.length} loja(s) antigas marcadas como TOP`);
+      fetchPartners();
+    })();
+  }, [partners, user, legacyTopBackfillDone]);
+
   const updatePartnerStatus = async (partnerId: string, status: 'approved' | 'rejected') => {
     const { error } = await supabase
       .from('partners')
