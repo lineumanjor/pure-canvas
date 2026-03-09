@@ -58,7 +58,7 @@ const Partners = () => {
         .from("products")
         .select(`
           *,
-          partner:partners!inner(name, image_url, status)
+          partner:partners!inner(name, image_url, status, category)
         `)
         .eq("partner.status", "approved")
         .eq("available", true)

@@ -56,14 +56,14 @@ const Explore = () => {
         .from("products")
         .select(`
           *,
-          partner:partners!inner(name, image_url, status)
+          partner:partners!inner(name, image_url, status, category)
         `)
         .eq("partner.status", "approved")
         .eq("available", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Product[];
+      return data as unknown as Product[];
     },
   });
 
