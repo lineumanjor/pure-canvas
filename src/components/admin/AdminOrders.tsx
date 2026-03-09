@@ -204,7 +204,7 @@ const AdminOrders = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Comissões</p>
+                <p className="text-sm text-muted-foreground">Receita Total</p>
                 <p className="text-2xl font-bold text-primary">{formatPrice(totalRevenue)}</p>
               </div>
               <Package className="h-8 w-8 text-primary opacity-80" />
