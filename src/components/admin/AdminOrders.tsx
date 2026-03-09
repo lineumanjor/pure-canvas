@@ -241,7 +241,7 @@ const AdminOrders = () => {
                     <TableHead>ID</TableHead>
                     <TableHead className="hidden md:table-cell">Parceiro</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead className="hidden lg:table-cell">Comissão</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
