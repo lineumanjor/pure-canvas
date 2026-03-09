@@ -263,9 +263,7 @@ const AdminOrders = () => {
                       <TableCell className="font-medium">
                         {formatPrice(order.total)}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-primary">
-                        {formatPrice(order.commission_amount || 0)}
-                      </TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
