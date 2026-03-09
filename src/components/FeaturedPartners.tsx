@@ -51,11 +51,15 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   // Filter partners to show only TOP partners and match selected category
+  // Fallback: if there are no TOP partners yet (legacy data), show approved partners so the homepage doesn't look empty.
   const filteredPartners = useMemo(() => {
-    let filtered = partners.filter(partner => partner.is_top);
+    const topPartners = partners.filter((partner) => partner.is_top);
+    const base = topPartners.length > 0 ? topPartners : partners;
+
+    let filtered = base;
     if (selectedCategory) {
-      filtered = filtered.filter(partner => 
-        partner.category.toLowerCase() === selectedCategory.toLowerCase()
+      filtered = filtered.filter(
+        (partner) => partner.category.toLowerCase() === selectedCategory.toLowerCase(),
       );
     }
     return filtered;

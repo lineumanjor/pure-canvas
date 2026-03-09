@@ -60,6 +60,7 @@ const AdminPartners = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [legacyTopBackfillDone, setLegacyTopBackfillDone] = useState(false);
 
   const fetchPartners = async () => {
     const { data, error } = await supabase
