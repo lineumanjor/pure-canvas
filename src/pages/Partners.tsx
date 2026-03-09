@@ -33,6 +33,7 @@ interface Product {
   partner: {
     name: string;
     image_url: string | null;
+    category: string;
   };
 }
 
