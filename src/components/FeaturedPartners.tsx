@@ -51,11 +51,15 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   // Filter partners to show only TOP partners and match selected category
+  // Fallback: if there are no TOP partners yet (legacy data), show approved partners so the homepage doesn't look empty.
   const filteredPartners = useMemo(() => {
-    let filtered = partners.filter(partner => partner.is_top);
+    const topPartners = partners.filter((partner) => partner.is_top);
+    const base = topPartners.length > 0 ? topPartners : partners;
+
+    let filtered = base;
     if (selectedCategory) {
-      filtered = filtered.filter(partner => 
-        partner.category.toLowerCase() === selectedCategory.toLowerCase()
+      filtered = filtered.filter(
+        (partner) => partner.category.toLowerCase() === selectedCategory.toLowerCase(),
       );
     }
     return filtered;
@@ -131,10 +135,14 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                 animate={isInView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <Button variant="outline" className="gap-2 shrink-0 group">
-                  Ver todos
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Button>
+                 <Button
+                   variant="outline"
+                   className="gap-2 shrink-0 group"
+                   onClick={() => navigate('/parceiros')}
+                 >
+                   Ver todos
+                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                 </Button>
               </motion.div>
             )}
           </div>
@@ -344,17 +352,18 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                     </Badge>
                   </div>
 
-                  {/* Top badge for first 3 partners */}
-                  {index < 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + index * 0.1, type: "spring" }}
-                      className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full"
-                    >
-                      Top
-                    </motion.div>
-                  )}
+                   {/* TOP badge (stores crachadas) */}
+                   {(partner.is_top || partners.every((p) => !p.is_top)) && (
+                     <motion.div
+                       initial={{ opacity: 0, scale: 0 }}
+                       animate={{ opacity: 1, scale: 1 }}
+                       transition={{ delay: 0.5 + index * 0.05, type: "spring" }}
+                       className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1"
+                     >
+                       <Sparkles className="w-3 h-3" />
+                       TOP
+                     </motion.div>
+                   )}
                 </div>
 
                 {/* Content */}
@@ -386,9 +395,9 @@ const FeaturedPartners = ({ selectedCategory, onClearFilter }: FeaturedPartnersP
                       className="flex items-center gap-1"
                       whileHover={{ scale: 1.05 }}
                     >
-                      <Star className="w-4 h-4 fill-primary text-primary" />
-                      <span className="font-semibold text-foreground">{Number(partner.rating).toFixed(1)}</span>
-                      <span className="text-sm text-muted-foreground">({partner.reviews_count})</span>
+                       <Star className="w-4 h-4 fill-primary text-primary" />
+                       <span className="font-semibold text-foreground">{Number(partner.rating ?? 0).toFixed(1)}</span>
+                       <span className="text-sm text-muted-foreground">({partner.reviews_count ?? 0})</span>
                     </motion.div>
                     <motion.div 
                       className="flex items-center gap-1 text-sm text-muted-foreground"
