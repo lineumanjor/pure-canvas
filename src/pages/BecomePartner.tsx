@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Store, MapPin, Phone, Mail, Instagram, MessageCircle, FileText, ArrowLeft, CheckCircle, CreditCard, Upload, Smartphone } from "lucide-react";
+import { Store, MapPin, Phone, Mail, Instagram, MessageCircle, FileText, ArrowLeft, CheckCircle, CreditCard, Upload, Smartphone, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const partnerSchema = z.object({
   name: z.string().trim().min(2, { message: "Nome muito curto" }).max(100),
@@ -53,6 +61,8 @@ const BecomePartner = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showMulticaixaConfirm, setShowMulticaixaConfirm] = useState(false);
+  const [ibanCopied, setIbanCopied] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -110,15 +120,96 @@ const BecomePartner = () => {
     setStep('payment');
   };
 
+  const handleMulticaixaSubmit = async () => {
+    if (!user || !selectedPlan) return;
+
+    setIsSubmitting(true);
+    setShowMulticaixaConfirm(false);
+    const formData = form.getValues();
+    const plan = plans.find(p => p.id === selectedPlan)!;
+
+    try {
+      // 1. Create partner — auto-approved since direct payment
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          location: formData.location,
+          phone: formData.phone,
+          email: formData.email,
+          whatsapp: formData.whatsapp || null,
+          instagram: formData.instagram || null,
+          status: 'approved',
+          is_frozen: false,
+          approved_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (partnerError) throw partnerError;
+
+      // 2. Assign partner role
+      await supabase.from('user_roles').insert({
+        user_id: user.id,
+        role: 'partner',
+      });
+
+      // 3. Create subscription — auto-approved
+      const startsAt = new Date();
+      const expiresAt = new Date();
+      if (selectedPlan === 'weekly') expiresAt.setDate(expiresAt.getDate() + 7);
+      else if (selectedPlan === 'monthly') expiresAt.setDate(expiresAt.getDate() + 30);
+      else expiresAt.setDate(expiresAt.getDate() + 90);
+
+      const { error: subError } = await supabase
+        .from('partner_subscriptions')
+        .insert({
+          partner_id: partnerData.id,
+          plan_type: selectedPlan,
+          amount: plan.price,
+          payment_method: 'multicaixa',
+          status: 'approved',
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          approved_at: new Date().toISOString(),
+        });
+
+      if (subError) throw subError;
+
+      setSubmitted(true);
+      toast({
+        title: "✅ Pagamento confirmado!",
+        description: "A sua loja foi ativada com sucesso. Pode começar a adicionar produtos!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro no pagamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleFinalSubmit = async () => {
     if (!user || !selectedPlan || !paymentMethod) return;
+
+    // Multicaixa Express — show confirmation dialog
+    if (paymentMethod === 'multicaixa') {
+      setShowMulticaixaConfirm(true);
+      return;
+    }
 
     setIsSubmitting(true);
     const formData = form.getValues();
     const plan = plans.find(p => p.id === selectedPlan)!;
 
     try {
-      // 1. Create partner
+      // Upload flow — pending admin approval
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
         .insert({
@@ -139,9 +230,8 @@ const BecomePartner = () => {
 
       if (partnerError) throw partnerError;
 
-      // 2. Upload receipt if applicable
       let receiptUrl: string | null = null;
-      if (paymentMethod === 'upload' && receiptFile) {
+      if (receiptFile) {
         setUploading(true);
         const fileExt = receiptFile.name.split('.').pop();
         const fileName = `${partnerData.id}/${Date.now()}.${fileExt}`;
@@ -160,22 +250,20 @@ const BecomePartner = () => {
         setUploading(false);
       }
 
-      // 3. Create subscription
       const { error: subError } = await supabase
         .from('partner_subscriptions')
         .insert({
           partner_id: partnerData.id,
           plan_type: selectedPlan,
           amount: plan.price,
-          payment_method: paymentMethod,
+          payment_method: 'upload',
           receipt_url: receiptUrl,
           status: 'pending',
         });
 
       if (subError) throw subError;
 
-      // 4. If upload method, redirect to WhatsApp
-      if (paymentMethod === 'upload' && settings.admin_whatsapp) {
+      if (settings.admin_whatsapp) {
         const whatsappNumber = settings.admin_whatsapp.replace(/\D/g, '');
         const message = encodeURIComponent(
           `Olá! Sou ${formData.name}. Enviei o comprovativo de pagamento para o plano ${plan.label} (${formatPrice(plan.price)}) na plataforma ESSENZA E.J. Aguardo validação.`
@@ -200,6 +288,13 @@ const BecomePartner = () => {
     }
   };
 
+  const copyIban = () => {
+    navigator.clipboard.writeText(settings.payment_iban);
+    setIbanCopied(true);
+    toast({ title: "IBAN copiado!" });
+    setTimeout(() => setIbanCopied(false), 2000);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -208,23 +303,33 @@ const BecomePartner = () => {
     );
   }
 
+  const wasMulticaixa = paymentMethod === 'multicaixa';
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-primary" />
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-4">
-            Candidatura Enviada!
+            {wasMulticaixa ? 'Loja Ativada com Sucesso!' : 'Candidatura Enviada!'}
           </h1>
           <p className="text-muted-foreground mb-8">
-            A sua candidatura e comprovativo de pagamento foram recebidos. 
-            Após validação pela administração, a sua loja será ativada.
+            {wasMulticaixa
+              ? 'O pagamento foi confirmado e a sua loja já está ativa! Aceda ao painel de parceiro para adicionar os seus produtos e serviços.'
+              : 'A sua candidatura e comprovativo de pagamento foram recebidos. Após validação pela administração, a sua loja será ativada.'}
           </p>
-          <Button onClick={() => navigate("/")} className="btn-gold">
-            Voltar à página inicial
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {wasMulticaixa && (
+              <Button onClick={() => navigate("/painel-parceiro")} className="btn-gold">
+                Ir para o Painel
+              </Button>
+            )}
+            <Button onClick={() => navigate("/")} variant={wasMulticaixa ? "outline" : "default"} className={!wasMulticaixa ? "btn-gold" : ""}>
+              Voltar à página inicial
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -500,7 +605,12 @@ const BecomePartner = () => {
               <Card className="mb-6 border-primary/20 bg-primary/5">
                 <CardContent className="p-6">
                   <p className="text-sm font-medium text-foreground mb-2">Dados para transferência:</p>
-                  <p className="font-mono text-sm text-muted-foreground">IBAN: {settings.payment_iban}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-sm text-muted-foreground select-all">IBAN: {settings.payment_iban}</p>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyIban}>
+                      {ibanCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
                   {settings.payment_account_holder && (
                     <p className="text-sm text-muted-foreground">Titular: {settings.payment_account_holder}</p>
                   )}
@@ -522,7 +632,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Multicaixa Express</h3>
-                    <p className="text-sm text-muted-foreground">Débito direto via Multicaixa Express para o IBAN</p>
+                    <p className="text-sm text-muted-foreground">Pagamento direto — loja ativada automaticamente</p>
                   </div>
                 </CardContent>
               </Card>
@@ -540,7 +650,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Upload de Comprovativo</h3>
-                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo</p>
+                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo (validação manual)</p>
                   </div>
                 </CardContent>
               </Card>
@@ -570,11 +680,36 @@ const BecomePartner = () => {
                 disabled={!paymentMethod || (paymentMethod === 'upload' && !receiptFile) || isSubmitting || uploading}
                 onClick={handleFinalSubmit}
               >
-                {isSubmitting || uploading ? 'A enviar...' : 'Enviar Candidatura'}
+                {isSubmitting || uploading ? 'A processar...' : paymentMethod === 'multicaixa' ? 'Pagar com Multicaixa Express' : 'Enviar Candidatura'}
               </Button>
             </div>
           </>
         )}
+
+        {/* Multicaixa Express Confirmation Dialog */}
+        <Dialog open={showMulticaixaConfirm} onOpenChange={setShowMulticaixaConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Pagamento</DialogTitle>
+              <DialogDescription>
+                Será debitado o valor de <strong>{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</strong> do 
+                seu Multicaixa Express para ativar o plano <strong>{plans.find(p => p.id === selectedPlan)?.label}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">Valor a debitar</p>
+              <p className="text-2xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowMulticaixaConfirm(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleMulticaixaSubmit} disabled={isSubmitting} className="btn-gold">
+                {isSubmitting ? 'A processar...' : 'Confirmar e Pagar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

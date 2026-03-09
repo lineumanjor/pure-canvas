@@ -433,6 +433,9 @@ export type Database = {
       }
       partner_subscriptions: {
         Row: {
+          alert_1d_sent: boolean | null
+          alert_3d_sent: boolean | null
+          alert_7d_sent: boolean | null
           amount: number
           approved_at: string | null
           approved_by: string | null
@@ -450,6 +453,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alert_1d_sent?: boolean | null
+          alert_3d_sent?: boolean | null
+          alert_7d_sent?: boolean | null
           amount: number
           approved_at?: string | null
           approved_by?: string | null
@@ -467,6 +473,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alert_1d_sent?: boolean | null
+          alert_3d_sent?: boolean | null
+          alert_7d_sent?: boolean | null
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
@@ -503,6 +512,7 @@ export type Database = {
           delivery_radius_km: number | null
           description: string | null
           email: string | null
+          grace_period_until: string | null
           id: string
           image_url: string | null
           instagram: string | null
@@ -529,6 +539,7 @@ export type Database = {
           delivery_radius_km?: number | null
           description?: string | null
           email?: string | null
+          grace_period_until?: string | null
           id?: string
           image_url?: string | null
           instagram?: string | null
@@ -555,6 +566,7 @@ export type Database = {
           delivery_radius_km?: number | null
           description?: string | null
           email?: string | null
+          grace_period_until?: string | null
           id?: string
           image_url?: string | null
           instagram?: string | null
