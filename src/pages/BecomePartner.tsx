@@ -303,23 +303,33 @@ const BecomePartner = () => {
     );
   }
 
+  const wasMulticaixa = paymentMethod === 'multicaixa';
+
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-primary" />
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-4">
-            Candidatura Enviada!
+            {wasMulticaixa ? 'Loja Ativada com Sucesso!' : 'Candidatura Enviada!'}
           </h1>
           <p className="text-muted-foreground mb-8">
-            A sua candidatura e comprovativo de pagamento foram recebidos. 
-            Após validação pela administração, a sua loja será ativada.
+            {wasMulticaixa
+              ? 'O pagamento foi confirmado e a sua loja já está ativa! Aceda ao painel de parceiro para adicionar os seus produtos e serviços.'
+              : 'A sua candidatura e comprovativo de pagamento foram recebidos. Após validação pela administração, a sua loja será ativada.'}
           </p>
-          <Button onClick={() => navigate("/")} className="btn-gold">
-            Voltar à página inicial
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {wasMulticaixa && (
+              <Button onClick={() => navigate("/painel-parceiro")} className="btn-gold">
+                Ir para o Painel
+              </Button>
+            )}
+            <Button onClick={() => navigate("/")} variant={wasMulticaixa ? "outline" : "default"} className={!wasMulticaixa ? "btn-gold" : ""}>
+              Voltar à página inicial
+            </Button>
+          </div>
         </div>
       </div>
     );
