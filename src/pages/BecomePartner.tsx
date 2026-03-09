@@ -688,26 +688,101 @@ const BecomePartner = () => {
           </>
         )}
 
+        {/* Step 4: Multicaixa Transfer */}
+        {step === 'multicaixa_transfer' && selectedPlan && (
+          <>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+                <Smartphone className="w-8 h-8 text-primary-foreground" />
+              </div>
+              <h1 className="font-display text-3xl font-bold text-foreground mb-2">
+                Faça a Transferência
+              </h1>
+              <p className="text-muted-foreground">
+                Transfira o valor abaixo via Multicaixa Express e depois confirme
+              </p>
+            </div>
+
+            <Card className="mb-6 border-primary/20 bg-primary/5">
+              <CardContent className="p-6 space-y-4">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Valor a transferir</p>
+                  <p className="text-3xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
+                </div>
+                <div className="border-t border-border pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">IBAN destino:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium text-foreground select-all">{settings.payment_iban}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyIban}>
+                        {ibanCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+                  {settings.payment_account_holder && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Titular:</span>
+                      <span className="text-sm font-medium text-foreground">{settings.payment_account_holder}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Plano:</span>
+                    <span className="text-sm font-medium text-foreground">{plans.find(p => p.id === selectedPlan)?.label} ({plans.find(p => p.id === selectedPlan)?.duration})</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-3">
+              <Button
+                className="w-full btn-gold"
+                disabled={isSubmitting}
+                onClick={handleConfirmTransfer}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                    A ativar a sua loja...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Já fiz a transferência
+                  </span>
+                )}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Ao confirmar, declara que efetuou a transferência do valor indicado via Multicaixa Express.
+              </p>
+            </div>
+          </>
+        )}
+
         {/* Multicaixa Express Confirmation Dialog */}
         <Dialog open={showMulticaixaConfirm} onOpenChange={setShowMulticaixaConfirm}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar Pagamento</DialogTitle>
+              <DialogTitle>Pagamento via Multicaixa Express</DialogTitle>
               <DialogDescription>
-                Será debitado o valor de <strong>{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</strong> do 
-                seu Multicaixa Express para ativar o plano <strong>{plans.find(p => p.id === selectedPlan)?.label}</strong>.
+                Será redirecionado para efetuar a transferência de <strong>{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</strong> para 
+                o IBAN da ESSENZA E.J via Multicaixa Express.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Valor a debitar</p>
-              <p className="text-2xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
+            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-1">Valor</p>
+                <p className="text-2xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
+              </div>
+              {settings.payment_iban && (
+                <p className="text-xs text-center text-muted-foreground">IBAN: {settings.payment_iban}</p>
+              )}
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setShowMulticaixaConfirm(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleMulticaixaSubmit} disabled={isSubmitting} className="btn-gold">
-                {isSubmitting ? 'A processar...' : 'Confirmar e Pagar'}
+              <Button onClick={handleOpenMulticaixaApp} className="btn-gold">
+                Prosseguir
               </Button>
             </DialogFooter>
           </DialogContent>
