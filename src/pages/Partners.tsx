@@ -33,6 +33,7 @@ interface Product {
   partner: {
     name: string;
     image_url: string | null;
+    category: string;
   };
 }
 
@@ -57,7 +58,7 @@ const Partners = () => {
         .from("products")
         .select(`
           *,
-          partner:partners!inner(name, image_url, status)
+          partner:partners!inner(name, image_url, status, category)
         `)
         .eq("partner.status", "approved")
         .eq("available", true)
@@ -92,6 +93,7 @@ const Partners = () => {
 
       const matchesCategory =
         selectedCategory === "all" ||
+        product.partner.category?.toLowerCase() === selectedCategory.toLowerCase() ||
         product.category?.toLowerCase() === selectedCategory.toLowerCase();
 
       return matchesSearch && matchesCategory;

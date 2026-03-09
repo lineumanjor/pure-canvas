@@ -34,6 +34,7 @@ interface Product {
   partner: {
     name: string;
     image_url: string | null;
+    category: string;
   };
 }
 
@@ -55,14 +56,14 @@ const Explore = () => {
         .from("products")
         .select(`
           *,
-          partner:partners!inner(name, image_url, status)
+          partner:partners!inner(name, image_url, status, category)
         `)
         .eq("partner.status", "approved")
         .eq("available", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Product[];
+      return data as unknown as Product[];
     },
   });
 
@@ -90,6 +91,7 @@ const Explore = () => {
 
       const matchesCategory =
         selectedCategory === "all" ||
+        product.partner.category?.toLowerCase() === selectedCategory.toLowerCase() ||
         product.category?.toLowerCase() === selectedCategory.toLowerCase();
 
       return matchesSearch && matchesCategory;
