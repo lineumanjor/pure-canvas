@@ -177,6 +177,10 @@ const Admin = () => {
             <AdminPartners />
           </TabsContent>
 
+          <TabsContent value="subscriptions" className="mt-6">
+            <AdminSubscriptions />
+          </TabsContent>
+
           <TabsContent value="products" className="mt-6">
             <AdminProducts />
           </TabsContent>
