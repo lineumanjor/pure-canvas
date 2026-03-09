@@ -61,6 +61,8 @@ const BecomePartner = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showMulticaixaConfirm, setShowMulticaixaConfirm] = useState(false);
+  const [ibanCopied, setIbanCopied] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
