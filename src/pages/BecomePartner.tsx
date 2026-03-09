@@ -605,7 +605,12 @@ const BecomePartner = () => {
               <Card className="mb-6 border-primary/20 bg-primary/5">
                 <CardContent className="p-6">
                   <p className="text-sm font-medium text-foreground mb-2">Dados para transferência:</p>
-                  <p className="font-mono text-sm text-muted-foreground">IBAN: {settings.payment_iban}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-sm text-muted-foreground select-all">IBAN: {settings.payment_iban}</p>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyIban}>
+                      {ibanCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
                   {settings.payment_account_holder && (
                     <p className="text-sm text-muted-foreground">Titular: {settings.payment_account_holder}</p>
                   )}
@@ -627,7 +632,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Multicaixa Express</h3>
-                    <p className="text-sm text-muted-foreground">Débito direto via Multicaixa Express para o IBAN</p>
+                    <p className="text-sm text-muted-foreground">Pagamento direto — loja ativada automaticamente</p>
                   </div>
                 </CardContent>
               </Card>
@@ -645,7 +650,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Upload de Comprovativo</h3>
-                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo</p>
+                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo (validação manual)</p>
                   </div>
                 </CardContent>
               </Card>
@@ -675,11 +680,36 @@ const BecomePartner = () => {
                 disabled={!paymentMethod || (paymentMethod === 'upload' && !receiptFile) || isSubmitting || uploading}
                 onClick={handleFinalSubmit}
               >
-                {isSubmitting || uploading ? 'A enviar...' : 'Enviar Candidatura'}
+                {isSubmitting || uploading ? 'A processar...' : paymentMethod === 'multicaixa' ? 'Pagar com Multicaixa Express' : 'Enviar Candidatura'}
               </Button>
             </div>
           </>
         )}
+
+        {/* Multicaixa Express Confirmation Dialog */}
+        <Dialog open={showMulticaixaConfirm} onOpenChange={setShowMulticaixaConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Pagamento</DialogTitle>
+              <DialogDescription>
+                Será debitado o valor de <strong>{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</strong> do 
+                seu Multicaixa Express para ativar o plano <strong>{plans.find(p => p.id === selectedPlan)?.label}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">Valor a debitar</p>
+              <p className="text-2xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowMulticaixaConfirm(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleMulticaixaSubmit} disabled={isSubmitting} className="btn-gold">
+                {isSubmitting ? 'A processar...' : 'Confirmar e Pagar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
