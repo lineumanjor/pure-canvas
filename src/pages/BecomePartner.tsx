@@ -120,15 +120,96 @@ const BecomePartner = () => {
     setStep('payment');
   };
 
+  const handleMulticaixaSubmit = async () => {
+    if (!user || !selectedPlan) return;
+
+    setIsSubmitting(true);
+    setShowMulticaixaConfirm(false);
+    const formData = form.getValues();
+    const plan = plans.find(p => p.id === selectedPlan)!;
+
+    try {
+      // 1. Create partner — auto-approved since direct payment
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          location: formData.location,
+          phone: formData.phone,
+          email: formData.email,
+          whatsapp: formData.whatsapp || null,
+          instagram: formData.instagram || null,
+          status: 'approved',
+          is_frozen: false,
+          approved_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (partnerError) throw partnerError;
+
+      // 2. Assign partner role
+      await supabase.from('user_roles').insert({
+        user_id: user.id,
+        role: 'partner',
+      });
+
+      // 3. Create subscription — auto-approved
+      const startsAt = new Date();
+      const expiresAt = new Date();
+      if (selectedPlan === 'weekly') expiresAt.setDate(expiresAt.getDate() + 7);
+      else if (selectedPlan === 'monthly') expiresAt.setDate(expiresAt.getDate() + 30);
+      else expiresAt.setDate(expiresAt.getDate() + 90);
+
+      const { error: subError } = await supabase
+        .from('partner_subscriptions')
+        .insert({
+          partner_id: partnerData.id,
+          plan_type: selectedPlan,
+          amount: plan.price,
+          payment_method: 'multicaixa',
+          status: 'approved',
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          approved_at: new Date().toISOString(),
+        });
+
+      if (subError) throw subError;
+
+      setSubmitted(true);
+      toast({
+        title: "✅ Pagamento confirmado!",
+        description: "A sua loja foi ativada com sucesso. Pode começar a adicionar produtos!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro no pagamento",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleFinalSubmit = async () => {
     if (!user || !selectedPlan || !paymentMethod) return;
+
+    // Multicaixa Express — show confirmation dialog
+    if (paymentMethod === 'multicaixa') {
+      setShowMulticaixaConfirm(true);
+      return;
+    }
 
     setIsSubmitting(true);
     const formData = form.getValues();
     const plan = plans.find(p => p.id === selectedPlan)!;
 
     try {
-      // 1. Create partner
+      // Upload flow — pending admin approval
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
         .insert({
@@ -149,9 +230,8 @@ const BecomePartner = () => {
 
       if (partnerError) throw partnerError;
 
-      // 2. Upload receipt if applicable
       let receiptUrl: string | null = null;
-      if (paymentMethod === 'upload' && receiptFile) {
+      if (receiptFile) {
         setUploading(true);
         const fileExt = receiptFile.name.split('.').pop();
         const fileName = `${partnerData.id}/${Date.now()}.${fileExt}`;
@@ -170,22 +250,20 @@ const BecomePartner = () => {
         setUploading(false);
       }
 
-      // 3. Create subscription
       const { error: subError } = await supabase
         .from('partner_subscriptions')
         .insert({
           partner_id: partnerData.id,
           plan_type: selectedPlan,
           amount: plan.price,
-          payment_method: paymentMethod,
+          payment_method: 'upload',
           receipt_url: receiptUrl,
           status: 'pending',
         });
 
       if (subError) throw subError;
 
-      // 4. If upload method, redirect to WhatsApp
-      if (paymentMethod === 'upload' && settings.admin_whatsapp) {
+      if (settings.admin_whatsapp) {
         const whatsappNumber = settings.admin_whatsapp.replace(/\D/g, '');
         const message = encodeURIComponent(
           `Olá! Sou ${formData.name}. Enviei o comprovativo de pagamento para o plano ${plan.label} (${formatPrice(plan.price)}) na plataforma ESSENZA E.J. Aguardo validação.`
@@ -208,6 +286,13 @@ const BecomePartner = () => {
       setIsSubmitting(false);
       setUploading(false);
     }
+  };
+
+  const copyIban = () => {
+    navigator.clipboard.writeText(settings.payment_iban);
+    setIbanCopied(true);
+    toast({ title: "IBAN copiado!" });
+    setTimeout(() => setIbanCopied(false), 2000);
   };
 
   if (authLoading) {
