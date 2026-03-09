@@ -431,6 +431,68 @@ export type Database = {
           },
         ]
       }
+      partner_subscriptions: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          notification_sent: boolean | null
+          partner_id: string
+          payment_method: string
+          plan_type: string
+          receipt_url: string | null
+          receipt_verified: boolean | null
+          starts_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notification_sent?: boolean | null
+          partner_id: string
+          payment_method: string
+          plan_type: string
+          receipt_url?: string | null
+          receipt_verified?: boolean | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          notification_sent?: boolean | null
+          partner_id?: string
+          payment_method?: string
+          plan_type?: string
+          receipt_url?: string | null
+          receipt_verified?: boolean | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_subscriptions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           approved_at: string | null
@@ -444,6 +506,7 @@ export type Database = {
           id: string
           image_url: string | null
           instagram: string | null
+          is_frozen: boolean
           is_top: boolean
           location: string
           name: string
@@ -469,6 +532,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_frozen?: boolean
           is_top?: boolean
           location: string
           name: string
@@ -494,6 +558,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           instagram?: string | null
+          is_frozen?: boolean
           is_top?: boolean
           location?: string
           name?: string
