@@ -114,13 +114,20 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto gap-2 bg-transparent p-0">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 h-auto gap-2 bg-transparent p-0">
             <TabsTrigger 
               value="partners" 
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Parceiros</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="subscriptions"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 py-3"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">Subscrições</span>
             </TabsTrigger>
             <TabsTrigger 
               value="products"
