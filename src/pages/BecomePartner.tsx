@@ -120,16 +120,19 @@ const BecomePartner = () => {
     setStep('payment');
   };
 
-  const handleMulticaixaSubmit = async () => {
+  const handleOpenMulticaixaApp = () => {
+    setShowMulticaixaConfirm(false);
+    setStep('multicaixa_transfer');
+  };
+
+  const handleConfirmTransfer = async () => {
     if (!user || !selectedPlan) return;
 
     setIsSubmitting(true);
-    setShowMulticaixaConfirm(false);
     const formData = form.getValues();
     const plan = plans.find(p => p.id === selectedPlan)!;
 
     try {
-      // 1. Create partner — auto-approved since direct payment
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
         .insert({
@@ -151,13 +154,11 @@ const BecomePartner = () => {
 
       if (partnerError) throw partnerError;
 
-      // 2. Assign partner role
       await supabase.from('user_roles').insert({
         user_id: user.id,
         role: 'partner',
       });
 
-      // 3. Create subscription — auto-approved
       const startsAt = new Date();
       const expiresAt = new Date();
       if (selectedPlan === 'weekly') expiresAt.setDate(expiresAt.getDate() + 7);
@@ -186,7 +187,7 @@ const BecomePartner = () => {
       });
     } catch (error: any) {
       toast({
-        title: "Erro no pagamento",
+        title: "Erro ao ativar loja",
         description: error.message,
         variant: "destructive",
       });
