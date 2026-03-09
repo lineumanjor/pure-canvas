@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText, Video } from 'lucide-react';
+import { Users, Package, ShoppingCart, Settings, LogOut, Shield, MessageCircle, FileText, Video, CreditCard } from 'lucide-react';
 import AdminPartners from '@/components/admin/AdminPartners';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminOrders from '@/components/admin/AdminOrders';
@@ -12,6 +12,7 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminChats from '@/components/admin/AdminChats';
 import AdminBlog from '@/components/admin/AdminBlog';
 import AdminPartnerComm from '@/components/admin/AdminPartnerComm';
+import AdminSubscriptions from '@/components/admin/AdminSubscriptions';
 
 const Admin = () => {
   const { user, loading, isAdmin, signOut } = useAuth();
