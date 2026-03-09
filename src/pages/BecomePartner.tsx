@@ -344,6 +344,7 @@ const BecomePartner = () => {
           onClick={() => {
             if (step === 'plan') setStep('details');
             else if (step === 'payment') setStep('plan');
+            else if (step === 'multicaixa_transfer') setStep('payment');
             else navigate("/");
           }}
           className="mb-6 gap-2"
