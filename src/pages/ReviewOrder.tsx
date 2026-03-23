@@ -165,7 +165,7 @@ const ReviewOrder = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col pt-16 lg:pt-20">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
@@ -184,7 +184,7 @@ const ReviewOrder = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col pt-16 lg:pt-20">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
           <motion.div
@@ -215,7 +215,7 @@ const ReviewOrder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pt-16 lg:pt-20">
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">

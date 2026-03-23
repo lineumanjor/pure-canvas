@@ -3,12 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Store, MapPin, Phone, Mail, Instagram, MessageCircle, FileText, ArrowLeft, CheckCircle, CreditCard, Upload, Smartphone, Copy, Check } from "lucide-react";
+import { Store, MapPin, Phone, Mail, Instagram, MessageCircle, FileText, ArrowLeft, CheckCircle, CreditCard, Upload, Smartphone, Copy, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
@@ -29,14 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 const partnerSchema = z.object({
   name: z.string().trim().min(2, { message: "Nome muito curto" }).max(100),
@@ -51,7 +42,7 @@ const partnerSchema = z.object({
 
 type PartnerFormData = z.infer<typeof partnerSchema>;
 
-type Step = 'details' | 'plan' | 'payment' | 'multicaixa_transfer';
+type Step = 'details' | 'plan' | 'payment';
 
 const BecomePartner = () => {
   const [step, setStep] = useState<Step>('details');
@@ -61,7 +52,6 @@ const BecomePartner = () => {
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [showMulticaixaConfirm, setShowMulticaixaConfirm] = useState(false);
   const [ibanCopied, setIbanCopied] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -110,8 +100,7 @@ const BecomePartner = () => {
     }).format(price);
   };
 
-  const handleDetailsSubmit = async (data: PartnerFormData) => {
-    // Just move to plan selection step, don't insert yet
+  const handleDetailsSubmit = async () => {
     setStep('plan');
   };
 
@@ -120,97 +109,15 @@ const BecomePartner = () => {
     setStep('payment');
   };
 
-  const handleOpenMulticaixaApp = () => {
-    setShowMulticaixaConfirm(false);
-    setStep('multicaixa_transfer');
-  };
-
-  const handleConfirmTransfer = async () => {
-    if (!user || !selectedPlan) return;
-
-    setIsSubmitting(true);
-    const formData = form.getValues();
-    const plan = plans.find(p => p.id === selectedPlan)!;
-
-    try {
-      const { data: partnerData, error: partnerError } = await supabase
-        .from('partners')
-        .insert({
-          user_id: user.id,
-          name: formData.name,
-          description: formData.description,
-          category: formData.category,
-          location: formData.location,
-          phone: formData.phone,
-          email: formData.email,
-          whatsapp: formData.whatsapp || null,
-          instagram: formData.instagram || null,
-          status: 'approved',
-          is_frozen: false,
-          approved_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-
-      if (partnerError) throw partnerError;
-
-      await supabase.from('user_roles').insert({
-        user_id: user.id,
-        role: 'partner',
-      });
-
-      const startsAt = new Date();
-      const expiresAt = new Date();
-      if (selectedPlan === 'weekly') expiresAt.setDate(expiresAt.getDate() + 7);
-      else if (selectedPlan === 'monthly') expiresAt.setDate(expiresAt.getDate() + 30);
-      else expiresAt.setDate(expiresAt.getDate() + 90);
-
-      const { error: subError } = await supabase
-        .from('partner_subscriptions')
-        .insert({
-          partner_id: partnerData.id,
-          plan_type: selectedPlan,
-          amount: plan.price,
-          payment_method: 'multicaixa',
-          status: 'approved',
-          starts_at: startsAt.toISOString(),
-          expires_at: expiresAt.toISOString(),
-          approved_at: new Date().toISOString(),
-        });
-
-      if (subError) throw subError;
-
-      setSubmitted(true);
-      toast({
-        title: "✅ Pagamento confirmado!",
-        description: "A sua loja foi ativada com sucesso. Pode começar a adicionar produtos!",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao ativar loja",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleFinalSubmit = async () => {
     if (!user || !selectedPlan || !paymentMethod) return;
 
-    // Multicaixa Express — show confirmation dialog
-    if (paymentMethod === 'multicaixa') {
-      setShowMulticaixaConfirm(true);
-      return;
-    }
-
     setIsSubmitting(true);
     const formData = form.getValues();
     const plan = plans.find(p => p.id === selectedPlan)!;
 
     try {
-      // Upload flow — pending admin approval
+      // Both methods: create partner as pending, admin must approve
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
         .insert({
@@ -232,7 +139,9 @@ const BecomePartner = () => {
       if (partnerError) throw partnerError;
 
       let receiptUrl: string | null = null;
-      if (receiptFile) {
+
+      // Upload receipt if provided
+      if (paymentMethod === 'upload' && receiptFile) {
         setUploading(true);
         const fileExt = receiptFile.name.split('.').pop();
         const fileName = `${partnerData.id}/${Date.now()}.${fileExt}`;
@@ -251,23 +160,26 @@ const BecomePartner = () => {
         setUploading(false);
       }
 
+      // Create subscription as pending for both methods
       const { error: subError } = await supabase
         .from('partner_subscriptions')
         .insert({
           partner_id: partnerData.id,
           plan_type: selectedPlan,
           amount: plan.price,
-          payment_method: 'upload',
+          payment_method: paymentMethod === 'multicaixa' ? 'multicaixa' : 'upload',
           receipt_url: receiptUrl,
           status: 'pending',
         });
 
       if (subError) throw subError;
 
+      // Redirect to WhatsApp for both methods
       if (settings.admin_whatsapp) {
         const whatsappNumber = settings.admin_whatsapp.replace(/\D/g, '');
+        const methodLabel = paymentMethod === 'multicaixa' ? 'Multicaixa Express' : 'Upload de comprovativo';
         const message = encodeURIComponent(
-          `Olá! Sou ${formData.name}. Enviei o comprovativo de pagamento para o plano ${plan.label} (${formatPrice(plan.price)}) na plataforma ESSENZA E.J. Aguardo validação.`
+          `Olá! Sou ${formData.name}. Fiz o pagamento do plano ${plan.label} (${formatPrice(plan.price)}) via ${methodLabel} na plataforma ESSENZA E.J. Aguardo validação.`
         );
         window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
       }
@@ -275,7 +187,7 @@ const BecomePartner = () => {
       setSubmitted(true);
       toast({
         title: "Candidatura enviada!",
-        description: "A sua candidatura e pagamento serão analisados pela administração.",
+        description: "O seu pagamento será verificado pela administração. Será notificado quando a sua loja for ativada.",
       });
     } catch (error: any) {
       toast({
@@ -304,33 +216,23 @@ const BecomePartner = () => {
     );
   }
 
-  const wasMulticaixa = paymentMethod === 'multicaixa';
-
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10 text-primary" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-4">
-            {wasMulticaixa ? 'Loja Ativada com Sucesso!' : 'Candidatura Enviada!'}
+            Candidatura Enviada!
           </h1>
           <p className="text-muted-foreground mb-8">
-            {wasMulticaixa
-              ? 'O pagamento foi confirmado e a sua loja já está ativa! Aceda ao painel de parceiro para adicionar os seus produtos e serviços.'
-              : 'A sua candidatura e comprovativo de pagamento foram recebidos. Após validação pela administração, a sua loja será ativada.'}
+            O seu pagamento será verificado pela administração da ESSENZA E.J. 
+            Receberá uma notificação assim que a sua loja for ativada.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {wasMulticaixa && (
-              <Button onClick={() => navigate("/painel-parceiro")} className="btn-gold">
-                Ir para o Painel
-              </Button>
-            )}
-            <Button onClick={() => navigate("/")} variant={wasMulticaixa ? "outline" : "default"} className={!wasMulticaixa ? "btn-gold" : ""}>
-              Voltar à página inicial
-            </Button>
-          </div>
+          <Button onClick={() => navigate("/")} className="btn-gold">
+            Voltar à página inicial
+          </Button>
         </div>
       </div>
     );
@@ -344,7 +246,6 @@ const BecomePartner = () => {
           onClick={() => {
             if (step === 'plan') setStep('details');
             else if (step === 'payment') setStep('plan');
-            else if (step === 'multicaixa_transfer') setStep('payment');
             else navigate("/");
           }}
           className="mb-6 gap-2"
@@ -387,156 +288,118 @@ const BecomePartner = () => {
             <div className="bg-card rounded-2xl p-8 shadow-lg border border-border">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleDetailsSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome do Negócio *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                            <Input placeholder="Ex: Sabores do Índico" className="pl-10" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Negócio *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                          <Input placeholder="Ex: Sabores do Índico" className="pl-10" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.name}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrição do Negócio *</FormLabel>
+                  <FormField control={form.control} name="category" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <div className="relative">
-                            <FileText className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-                            <Textarea 
-                              placeholder="Descreva o seu negócio, produtos ou serviços..." 
-                              className="pl-10 min-h-[120px]" 
-                              {...field} 
-                            />
-                          </div>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Localização *</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                            <Input placeholder="Ex: Talatona, Luanda" className="pl-10" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição do Negócio *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <FileText className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                          <Textarea placeholder="Descreva o seu negócio, produtos ou serviços..." className="pl-10 min-h-[120px]" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="location" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Localização *</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                          <Input placeholder="Ex: Talatona, Luanda" className="pl-10" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
                   <div className="grid sm:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Telefone *</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                              <Input placeholder="+244 9XX XXX XXX" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="phone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <Input placeholder="+244 9XX XXX XXX" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
 
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email *</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                              <Input placeholder="negocio@email.com" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email *</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <Input placeholder="negocio@email.com" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="whatsapp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>WhatsApp (opcional)</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                              <Input placeholder="+244 9XX XXX XXX" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="whatsapp" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>WhatsApp (opcional)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <Input placeholder="+244 9XX XXX XXX" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
 
-                    <FormField
-                      control={form.control}
-                      name="instagram"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Instagram (opcional)</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                              <Input placeholder="@seunegocio" className="pl-10" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <FormField control={form.control} name="instagram" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instagram (opcional)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <Input placeholder="@seunegocio" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   </div>
 
                   <Button type="submit" className="w-full btn-gold">
@@ -634,7 +497,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Multicaixa Express</h3>
-                    <p className="text-sm text-muted-foreground">Pagamento direto — loja ativada automaticamente</p>
+                    <p className="text-sm text-muted-foreground">Transfira via app bancário — validação pela administração</p>
                   </div>
                 </CardContent>
               </Card>
@@ -652,7 +515,7 @@ const BecomePartner = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Upload de Comprovativo</h3>
-                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo (validação manual)</p>
+                    <p className="text-sm text-muted-foreground">Faça a transferência e envie o comprovativo para validação</p>
                   </div>
                 </CardContent>
               </Card>
@@ -677,116 +540,28 @@ const BecomePartner = () => {
                 </Card>
               )}
 
+              {/* Multicaixa info note */}
+              {paymentMethod === 'multicaixa' && (
+                <Card className="border-dashed bg-muted/30">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Após submeter, será redirecionado para o WhatsApp da ESSENZA E.J para confirmar o pagamento. 
+                      A administração irá verificar a transferência e ativar a sua loja.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               <Button
                 className="w-full btn-gold"
                 disabled={!paymentMethod || (paymentMethod === 'upload' && !receiptFile) || isSubmitting || uploading}
                 onClick={handleFinalSubmit}
               >
-                {isSubmitting || uploading ? 'A processar...' : paymentMethod === 'multicaixa' ? 'Pagar com Multicaixa Express' : 'Enviar Candidatura'}
+                {isSubmitting || uploading ? 'A processar...' : 'Enviar Candidatura'}
               </Button>
             </div>
           </>
         )}
-
-        {/* Step 4: Multicaixa Transfer */}
-        {step === 'multicaixa_transfer' && selectedPlan && (
-          <>
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="w-8 h-8 text-primary-foreground" />
-              </div>
-              <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-                Faça a Transferência
-              </h1>
-              <p className="text-muted-foreground">
-                Transfira o valor abaixo via Multicaixa Express e depois confirme
-              </p>
-            </div>
-
-            <Card className="mb-6 border-primary/20 bg-primary/5">
-              <CardContent className="p-6 space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Valor a transferir</p>
-                  <p className="text-3xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
-                </div>
-                <div className="border-t border-border pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">IBAN destino:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-medium text-foreground select-all">{settings.payment_iban}</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={copyIban}>
-                        {ibanCopied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                      </Button>
-                    </div>
-                  </div>
-                  {settings.payment_account_holder && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Titular:</span>
-                      <span className="text-sm font-medium text-foreground">{settings.payment_account_holder}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Plano:</span>
-                    <span className="text-sm font-medium text-foreground">{plans.find(p => p.id === selectedPlan)?.label} ({plans.find(p => p.id === selectedPlan)?.duration})</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-3">
-              <Button
-                className="w-full btn-gold"
-                disabled={isSubmitting}
-                onClick={handleConfirmTransfer}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
-                    A ativar a sua loja...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Já fiz a transferência
-                  </span>
-                )}
-              </Button>
-              <p className="text-xs text-center text-muted-foreground">
-                Ao confirmar, declara que efetuou a transferência do valor indicado via Multicaixa Express.
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* Multicaixa Express Confirmation Dialog */}
-        <Dialog open={showMulticaixaConfirm} onOpenChange={setShowMulticaixaConfirm}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Pagamento via Multicaixa Express</DialogTitle>
-              <DialogDescription>
-                Será redirecionado para efetuar a transferência de <strong>{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</strong> para 
-                o IBAN da ESSENZA E.J via Multicaixa Express.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-1">Valor</p>
-                <p className="text-2xl font-bold text-foreground">{formatPrice(plans.find(p => p.id === selectedPlan)?.price || 0)}</p>
-              </div>
-              {settings.payment_iban && (
-                <p className="text-xs text-center text-muted-foreground">IBAN: {settings.payment_iban}</p>
-              )}
-            </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowMulticaixaConfirm(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleOpenMulticaixaApp} className="btn-gold">
-                Prosseguir
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

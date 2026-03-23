@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/contexts/CartContext";
 import { ThemeProvider } from "@/hooks/useTheme";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import BecomePartner from "./pages/BecomePartner";
@@ -30,6 +32,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <PWAUpdatePrompt />
+            <PWAInstallPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
